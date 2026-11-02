@@ -104,9 +104,12 @@ private struct QuotePayload: Encodable {
     var snapshotSha256: String
     var netTotalCents: Int
     var grossTotalCents: Int
+    /// Device that issued the quote (traceability; the server ignores unknown keys).
+    var deviceCode: String
 
     enum CodingKeys: String, CodingKey {
         case id, revision, calculation
+        case deviceCode = "device_code"
         case calculationJson = "calculation_json"
         case jobId = "job_id", provisionalNumber = "provisional_number", issuedAt = "issued_at"
         case priceBookVersionId = "price_book_version_id", engineVersion = "engine_version"
@@ -152,12 +155,28 @@ enum LocalStore {
 
     static func settings(in context: ModelContext) -> TenantSettings {
         if let existing = try? context.fetch(FetchDescriptor<TenantSettings>()).first {
+            // Old 4-character codes are upgraded only if no provisional number was handed out yet.
+            if existing.deviceCode.count < deviceCodeLength, existing.nextProvisionalSequence == 1 {
+                existing.deviceCode = makeDeviceCode()
+            }
             return existing
         }
-        let code = String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(4))
-        let settings = TenantSettings(deviceCode: code)
+        let settings = TenantSettings(deviceCode: makeDeviceCode())
         context.insert(settings)
         return settings
+    }
+
+    static let deviceCodeLength = 6
+    /// No 0/O and 1/I, so codes can be read out over the phone without confusion.
+    static let deviceCodeAlphabet = Array("23456789ABCDEFGHJKLMNPQRSTUVWXYZ")
+
+    /// Random code identifying this device in provisional quote numbers
+    /// (32^6 ≈ 1 billion combinations – collisions within a company are very unlikely).
+    static func makeDeviceCode() -> String {
+        var generator = SystemRandomNumberGenerator()
+        return String((0..<deviceCodeLength).map { _ in
+            deviceCodeAlphabet[Int.random(in: 0..<deviceCodeAlphabet.count, using: &generator)]
+        })
     }
 
     static func activePriceBook(in context: ModelContext) -> PriceBookVersion? {
@@ -228,7 +247,7 @@ enum LocalStore {
             engineVersion: calculation.engineVersion, calculation: calculation,
             calculationJson: String(decoding: canonical, as: UTF8.self),
             snapshotSha256: quote.snapshotSHA256, netTotalCents: calculation.netTotalCents,
-            grossTotalCents: calculation.grossTotalCents
+            grossTotalCents: calculation.grossTotalCents, deviceCode: settings.deviceCode
         ), in: context)
         try context.save()
         return quote

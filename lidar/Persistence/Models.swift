@@ -22,7 +22,7 @@ final class TenantSettings {
     var mediaDeviceOnly: Bool
     /// Tenant-editable end-client privacy notice (Art. 13 GDPR), shown before a scan and printed on quotes.
     var privacyNoticeText: String
-    /// Random 4-character code identifying this device in provisional quote numbers.
+    /// Random 6-character code (unambiguous alphabet) identifying this device in provisional quote numbers.
     var deviceCode: String
     var nextProvisionalSequence: Int
     var syncCursor: Int
