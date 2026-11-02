@@ -52,3 +52,53 @@ struct RoomNameTests {
         #expect(try upsertSurveyCount(context) == 0)
     }
 }
+
+/// H6 – duplicate room names never collide in quotes; default names never repeat.
+@MainActor
+@Suite(.serialized)
+struct DuplicateRoomNameTests {
+    @Test func linesOfSameNamedRoomsHaveDistinctIDs() {
+        let item = PriceItem(id: UUID(), code: "MAL-01", name: "Paint", basis: .floorArea, unitPriceCents: 1000,
+                             openingRule: .noDeduction, defaultWastePercent: 0)
+        let book = PriceBookSnapshot(versionID: UUID(), version: 1, name: "B", vatRateBasisPoints: 1900, items: [item])
+        let selection = [ItemSelection(itemID: item.id, wastePercent: 0)]
+        let rooms = [
+            RoomInput(surveyID: UUID(), roomName: "Bad", measurement: .rectangle(width: 2, depth: 2, height: 2.5), selections: selection),
+            RoomInput(surveyID: UUID(), roomName: "Bad", measurement: .rectangle(width: 3, depth: 3, height: 2.5), selections: selection),
+        ]
+        let calculation = EstimationEngine.calculate(rooms: rooms, priceBook: book)
+        #expect(calculation.lines.count == 2)
+        #expect(Set(calculation.lines.map(\.id)).count == 2)
+        #expect(calculation.lines.allSatisfy { $0.itemID == item.id })
+        #expect(calculation.engineVersion == "1.1.0")
+    }
+
+    @Test func oldQuoteLinesWithoutIDsStillDecode() throws {
+        let json = """
+        {"roomName":"Bad","itemCode":"MAL-01","itemName":"Paint","unit":"m2","netQuantityHundredths":400,
+         "wastePercent":0,"billedQuantityHundredths":400,"unitPriceCents":1000,"totalCents":4000}
+        """
+        let line = try JSONDecoder().decode(QuoteLine.self, from: Data(json.utf8))
+        #expect(line.surveyID == nil && line.itemID == nil)
+        #expect(line.id == "Bad|MAL-01")
+    }
+
+    @Test func nextRoomNameFillsGapsAfterDeletion() throws {
+        let container = try makeTestContainer()
+        let context = container.mainContext
+        let job = Job(title: "Job")
+        context.insert(job)
+        for name in ["Room 1", "Room 2", "Room 3"] {
+            context.insert(Survey(roomName: name, measurement: .empty, job: job))
+        }
+        try context.save()
+        #expect(LocalStore.nextRoomName(for: job) == "Room 4")
+
+        let second = try #require(job.surveys.first { $0.roomName == "Room 2" })
+        context.delete(second)
+        try context.save()
+        // Old behaviour produced "Room 3" here – a duplicate.
+        #expect(LocalStore.nextRoomName(for: job) == "Room 2")
+        #expect(throws: LocalStoreError.duplicateRoomName("room 3")) { try LocalStore.validatedRoomName("room 3", in: job) }
+    }
+}

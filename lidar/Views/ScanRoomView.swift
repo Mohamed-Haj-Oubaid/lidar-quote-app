@@ -57,7 +57,7 @@ struct ScanRoomView: View {
             .padding()
         }
         .onAppear {
-            roomName = String(localized: "Room \(job.surveys.count + 1)")
+            roomName = LocalStore.nextRoomName(for: job)
         }
     }
 
@@ -66,7 +66,9 @@ struct ScanRoomView: View {
         case .failure(let error):
             phase = .failed(error.localizedDescription)
         case .success(let room):
-            let survey = Survey(roomName: roomName, measurement: SurveyEngine.measurement(from: room), job: job)
+            // Re-check: another room may have been added since the scan started.
+            let name = LocalStore.isRoomName(roomName, takenIn: job) ? LocalStore.nextRoomName(for: job) : roomName
+            let survey = Survey(roomName: name, measurement: SurveyEngine.measurement(from: room), job: job)
             modelContext.insert(survey)
             // The parametric model holds geometry only (no camera imagery) and stays on the device
             // unless the firm allows media upload.
@@ -93,11 +95,17 @@ struct ManualRoomView: View {
     @State private var height = 2.5
     @State private var doors = 1
     @State private var windows = 1
+    @State private var nameError: String?
 
     var body: some View {
         Form {
             Section("Room") {
                 TextField("Name", text: $roomName)
+                if let nameError {
+                    Text(nameError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
                 MeterField(title: "Width", value: $width)
                 MeterField(title: "Depth", value: $depth)
                 MeterField(title: "Ceiling height", value: $height)
@@ -121,11 +129,18 @@ struct ManualRoomView: View {
             }
         }
         .onAppear {
-            roomName = String(localized: "Room \(job.surveys.count + 1)")
+            roomName = LocalStore.nextRoomName(for: job)
         }
     }
 
     private func add() {
+        let name: String
+        do {
+            name = try LocalStore.validatedRoomName(roomName, in: job)
+        } catch {
+            nameError = error.localizedDescription
+            return
+        }
         var measurement = RoomMeasurement.rectangle(width: width, depth: depth, height: height)
         let walls = measurement.walls
         for index in 0..<doors {
@@ -136,7 +151,7 @@ struct ManualRoomView: View {
             let wall = walls[(index + 2) % walls.count]
             measurement.openings.append(RoomOpening(id: UUID(), kind: .window, width: 1.2, height: 1.3, wallID: wall.id, centerOffset: wall.length * 0.6))
         }
-        let survey = Survey(roomName: roomName, measurement: measurement, job: job)
+        let survey = Survey(roomName: name, measurement: measurement, job: job)
         modelContext.insert(survey)
         try? LocalStore.save(survey: survey, in: modelContext)
         dismiss()

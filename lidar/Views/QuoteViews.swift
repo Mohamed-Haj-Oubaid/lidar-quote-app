@@ -30,7 +30,8 @@ struct QuoteBuilderView: View {
                         Text("Select services & materials for each room first.")
                             .foregroundStyle(.secondary)
                     }
-                    ForEach(calculation.lines) { line in
+                    // Offsets: lines of old (1.0.0) quotes may share an id.
+                    ForEach(Array(calculation.lines.enumerated()), id: \.offset) { _, line in
                         VStack(alignment: .leading, spacing: 2) {
                             HStack {
                                 Text(line.itemName)
@@ -105,7 +106,7 @@ struct QuoteBuilderView: View {
 
     private var currentCalculation: QuoteCalculation? {
         guard let book = priceBooks.first else { return nil }
-        let rooms = job.sortedSurveys.map { RoomInput(roomName: $0.roomName, measurement: $0.measurement, selections: $0.selections) }
+        let rooms = job.sortedSurveys.map { RoomInput(surveyID: $0.id, roomName: $0.roomName, measurement: $0.measurement, selections: $0.selections) }
         return EstimationEngine.calculate(rooms: rooms, priceBook: book.snapshot)
     }
 

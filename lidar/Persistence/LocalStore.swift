@@ -204,6 +204,18 @@ enum LocalStore {
         return job.surveys.contains { $0.id != survey?.id && normalizedRoomName($0.roomName) == key }
     }
 
+    /// First "Room N" that is not taken in the job – never repeats after a deletion.
+    static func nextRoomName(for job: Job) -> String {
+        var number = job.surveys.count + 1
+        for candidate in 1...(job.surveys.count + 1) {
+            if !isRoomName(String(localized: "Room \(candidate)"), takenIn: job) {
+                number = candidate
+                break
+            }
+        }
+        return String(localized: "Room \(number)")
+    }
+
     static func normalizedRoomName(_ name: String) -> String {
         name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }

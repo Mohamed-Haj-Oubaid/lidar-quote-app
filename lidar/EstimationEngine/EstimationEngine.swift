@@ -3,13 +3,27 @@ import CryptoKit
 
 /// One room as input to a calculation.
 nonisolated struct RoomInput: Hashable {
+    var surveyID: UUID?
     var roomName: String
     var measurement: RoomMeasurement
     var selections: [ItemSelection]
+
+    init(surveyID: UUID? = nil, roomName: String, measurement: RoomMeasurement, selections: [ItemSelection]) {
+        self.surveyID = surveyID
+        self.roomName = roomName
+        self.measurement = measurement
+        self.selections = selections
+    }
 }
 
 nonisolated struct QuoteLine: Codable, Hashable, Identifiable {
-    var id: String { "\(roomName)|\(itemCode)" }
+    /// Stable even when two rooms share a name (engine ≥ 1.1.0). Quotes from
+    /// 1.0.0 have no ids and fall back to name and code.
+    var id: String { "\(surveyID?.uuidString ?? roomName)|\(itemID?.uuidString ?? itemCode)" }
+    /// Room the line belongs to (optional so 1.0.0 quotes still decode).
+    var surveyID: UUID?
+    /// Price-book item the line was priced from (optional so 1.0.0 quotes still decode).
+    var itemID: UUID?
     var roomName: String
     var itemCode: String
     var itemName: String
@@ -69,7 +83,9 @@ nonisolated struct QuoteCalculation: Codable, Hashable {
 /// fully offline. Bump `version` whenever the rules change so old quotes stay
 /// attributable to the rules that produced them.
 nonisolated enum EstimationEngine {
-    static let version = "1.0.0"
+    /// 1.1.0: quote lines carry surveyID/itemID, canonical JSON without escaped
+    /// slashes, opening notes built from parts (no stray separators).
+    static let version = "1.1.0"
 
     static func calculate(rooms: [RoomInput], priceBook: PriceBookSnapshot) -> QuoteCalculation {
         let itemsByID = Dictionary(uniqueKeysWithValues: priceBook.items.map { ($0.id, $0) })
@@ -95,6 +111,8 @@ nonisolated enum EstimationEngine {
                 let billedH = applyWaste(netH, percent: selection.wastePercent, unit: item.unit)
                 guard billedH > 0 else { continue }
                 lines.append(QuoteLine(
+                    surveyID: room.surveyID,
+                    itemID: item.id,
                     roomName: room.roomName,
                     itemCode: item.code,
                     itemName: item.name,
