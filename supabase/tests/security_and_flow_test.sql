@@ -645,6 +645,24 @@ begin
 end $$;
 
 -- -----------------------------------------------------------------------------
+-- M4a. Company details for the quote PDF (checked through pull_changes below)
+-- -----------------------------------------------------------------------------
+do $$
+declare
+    r jsonb;
+begin
+    perform test_ctx.login('55555555-5555-5555-5555-555555555555');
+    set local role authenticated;
+    r := public.push_mutations(jsonb_build_array(test_ctx.mutation('a4000000-0000-0000-0000-000000000001', 'update_tenant_settings',
+        '{"tax_number":"12/345/67890","vat_id":"DE123456789","phone":"+49 30 123","email":"info@c.de",
+          "bank_iban":"DE02120300000000202051","payment_terms":"14 Tage netto","quote_validity_days":45}'::jsonb),
+        test_ctx.mutation('a4000000-0000-0000-0000-000000000002', 'update_tenant_settings', '{"quote_validity_days":0}'::jsonb)));
+    reset role;
+    assert r -> 0 ->> 'status' = 'applied', r::text;
+    assert r -> 1 ->> 'status' = 'rejected' and r -> 1 ->> 'sqlstate' = '23514', 'M4: validity days range-checked ' || r::text;
+end $$;
+
+-- -----------------------------------------------------------------------------
 -- H1. Deleted rooms and jobs reach other devices through pull_changes
 -- -----------------------------------------------------------------------------
 do $$
@@ -689,6 +707,20 @@ begin
     assert (select e ->> 'deleted_at' from jsonb_array_elements(r -> 'surveys') e
             where e ->> 'id' = '41c00000-0000-0000-0000-000000000001') is not null, 'H1: rooms of a deleted job are deleted';
     raise notice 'ok H1b: pull_changes returns deleted rooms and jobs with deleted_at';
+end $$;
+
+do $$
+declare
+    r jsonb;
+begin
+    perform test_ctx.login('55555555-5555-5555-5555-555555555555');
+    set local role authenticated;
+    r := public.pull_changes(0) -> 'tenant';
+    reset role;
+    assert r ->> 'vat_id' = 'DE123456789' and r ->> 'bank_iban' = 'DE02120300000000202051'
+       and r ->> 'payment_terms' = '14 Tage netto' and (r ->> 'quote_validity_days')::int = 45
+       and r ->> 'tax_number' = '12/345/67890' and r ->> 'phone' = '+49 30 123' and r ->> 'email' = 'info@c.de', r::text;
+    raise notice 'ok M4: company quote details are stored and synced';
 end $$;
 
 -- -----------------------------------------------------------------------------

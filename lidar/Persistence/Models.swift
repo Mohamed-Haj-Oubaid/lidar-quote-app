@@ -28,6 +28,14 @@ final class TenantSettings {
     var syncCursor: Int
     var lastSyncAt: Date?
     var appLockEnabled: Bool
+    // Details printed on quotes (German Angebot). Defaults keep the store migration lightweight.
+    var taxNumber: String = ""
+    var vatID: String = ""
+    var phone: String = ""
+    var email: String = ""
+    var bankIBAN: String = ""
+    var paymentTerms: String = ""
+    var quoteValidityDays: Int = 30
 
     init(deviceCode: String) {
         self.firmName = Self.defaultFirmName
@@ -58,6 +66,13 @@ final class TenantSettings {
         quotePrefix = Self.defaultQuotePrefix
         mediaDeviceOnly = true
         privacyNoticeText = Self.defaultPrivacyNotice
+        taxNumber = ""
+        vatID = ""
+        phone = ""
+        email = ""
+        bankIBAN = ""
+        paymentTerms = ""
+        quoteValidityDays = 30
     }
 }
 

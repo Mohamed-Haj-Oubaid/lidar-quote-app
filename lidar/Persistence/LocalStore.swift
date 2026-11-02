@@ -41,10 +41,19 @@ private struct TenantSettingsPayload: Encodable {
     var quotePrefix: String
     var mediaDeviceOnly: Bool
     var privacyNotice: String
+    var taxNumber: String
+    var vatId: String
+    var phone: String
+    var email: String
+    var bankIban: String
+    var paymentTerms: String
+    var quoteValidityDays: Int
 
     enum CodingKeys: String, CodingKey {
-        case name, address
+        case name, address, phone, email
         case quotePrefix = "quote_prefix", mediaDeviceOnly = "media_device_only", privacyNotice = "privacy_notice"
+        case taxNumber = "tax_number", vatId = "vat_id", bankIban = "bank_iban"
+        case paymentTerms = "payment_terms", quoteValidityDays = "quote_validity_days"
     }
 }
 
@@ -186,7 +195,10 @@ enum LocalStore {
     static func save(settings: TenantSettings, in context: ModelContext) throws {
         try enqueue(.updateTenantSettings, TenantSettingsPayload(
             name: settings.firmName, address: settings.firmAddress, quotePrefix: settings.quotePrefix,
-            mediaDeviceOnly: settings.mediaDeviceOnly, privacyNotice: settings.privacyNoticeText
+            mediaDeviceOnly: settings.mediaDeviceOnly, privacyNotice: settings.privacyNoticeText,
+            taxNumber: settings.taxNumber, vatId: settings.vatID, phone: settings.phone, email: settings.email,
+            bankIban: settings.bankIBAN, paymentTerms: settings.paymentTerms,
+            quoteValidityDays: min(max(settings.quoteValidityDays, 1), 365)
         ), in: context)
         try context.save()
     }

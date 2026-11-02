@@ -164,6 +164,24 @@ private struct FirmSettingsSection: View {
         .disabled(!canEdit)
 
         Section {
+            TextField("Phone", text: $settings.phone)
+                .keyboardType(.phonePad)
+            TextField("Email", text: $settings.email)
+                .keyboardType(.emailAddress)
+                .textInputAutocapitalization(.never)
+            TextField("Tax number (Steuernummer)", text: $settings.taxNumber)
+            TextField("VAT ID (USt-IdNr.)", text: $settings.vatID)
+                .textInputAutocapitalization(.characters)
+            TextField("IBAN", text: $settings.bankIBAN)
+                .textInputAutocapitalization(.characters)
+            TextField("Payment terms", text: $settings.paymentTerms, axis: .vertical)
+            Stepper("Quotes valid for \(settings.quoteValidityDays) days", value: $settings.quoteValidityDays, in: 1...365)
+        } header: {
+            Text("Printed on quotes")
+        }
+        .disabled(!canEdit)
+
+        Section {
             Toggle("Keep 3D models & photos on device only", isOn: $settings.mediaDeviceOnly)
                 .disabled(!canEdit)
             Toggle("Lock app with Face ID", isOn: $settings.appLockEnabled)

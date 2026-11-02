@@ -443,10 +443,19 @@ final class SyncManager {
         var quotePrefix: String
         var mediaDeviceOnly: Bool
         var privacyNotice: String?
+        var taxNumber: String?
+        var vatID: String?
+        var phone: String?
+        var email: String?
+        var bankIBAN: String?
+        var paymentTerms: String?
+        var quoteValidityDays: Int?
 
         enum CodingKeys: String, CodingKey {
-            case id, name, address
+            case id, name, address, phone, email
             case quotePrefix = "quote_prefix", mediaDeviceOnly = "media_device_only", privacyNotice = "privacy_notice"
+            case taxNumber = "tax_number", vatID = "vat_id", bankIBAN = "bank_iban"
+            case paymentTerms = "payment_terms", quoteValidityDays = "quote_validity_days"
         }
     }
 
@@ -495,6 +504,13 @@ final class SyncManager {
             if let notice = tenant.privacyNotice, !notice.isEmpty {
                 settings.privacyNoticeText = notice
             }
+            settings.taxNumber = tenant.taxNumber ?? ""
+            settings.vatID = tenant.vatID ?? ""
+            settings.phone = tenant.phone ?? ""
+            settings.email = tenant.email ?? ""
+            settings.bankIBAN = tenant.bankIBAN ?? ""
+            settings.paymentTerms = tenant.paymentTerms ?? ""
+            settings.quoteValidityDays = tenant.quoteValidityDays ?? 30
         }
 
         let existing = try context.fetch(FetchDescriptor<PriceBookVersion>())

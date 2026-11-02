@@ -54,54 +54,76 @@ enum PDFGenerator {
     }
 
     static func render(_ quote: QuoteDocument, job: Job, settings: TenantSettings) -> Data? {
+        // Two passes: the first counts pages so every footer can say "Page x of y".
+        let first = renderPass(quote, job: job, settings: settings, totalPages: nil)
+        return renderPass(quote, job: job, settings: settings, totalPages: first.pages).data
+    }
+
+    /// Number of pages a document needs (exposed for tests).
+    static func pageCount(_ quote: QuoteDocument, job: Job, settings: TenantSettings) -> Int {
+        renderPass(quote, job: job, settings: settings, totalPages: nil).pages
+    }
+
+    private static func renderPass(_ quote: QuoteDocument, job: Job, settings: TenantSettings, totalPages: Int?) -> (data: Data, pages: Int) {
         let calculation = quote.calculation
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format(for: quote))
+        var pages = 0
 
-        return renderer.pdfData { context in
-            var y = startPage(context, quote: quote, settings: settings)
+        let data = renderer.pdfData { context in
+            let page = PageWriter(context: context, quote: quote, settings: settings, totalPages: totalPages)
+            page.start()
 
             // Client & job
-            y = draw(String(localized: "Client"), at: y, font: .boldSystemFont(ofSize: 10))
+            page.text(String(localized: "Client"), font: .boldSystemFont(ofSize: 10))
             let clientLines = [job.clientName, job.siteAddress, job.clientEmail, job.clientPhone].filter { !$0.isEmpty }
-            y = draw(clientLines.joined(separator: "\n"), at: y, font: .systemFont(ofSize: 10))
-            y = draw(String(localized: "Project: \(job.title)"), at: y + 6, font: .systemFont(ofSize: 10))
-            y += 14
+            page.text(clientLines.joined(separator: "\n"), font: .systemFont(ofSize: 10))
+            page.y += 6
+            page.text(String(localized: "Project: \(job.title)"), font: .systemFont(ofSize: 10))
+            page.y += 14
 
             // Room summary (Aufmaß)
-            y = draw(String(localized: "Measurements"), at: y, font: .boldSystemFont(ofSize: 11))
+            page.text(String(localized: "Measurements"), font: .boldSystemFont(ofSize: 11))
             for room in calculation.rooms {
-                let text = String(localized: "\(room.roomName): floor \(Formatters.quantity(room.floorAreaHundredths, unit: .squareMeter)), walls gross \(Formatters.quantity(room.grossWallAreaHundredths, unit: .squareMeter)), openings \(Formatters.quantity(room.openingAreaHundredths, unit: .squareMeter)), \(room.doorCount) doors, \(room.windowCount) windows")
-                y = ensureSpace(context, y: y, needed: 16, quote: quote, settings: settings)
-                y = draw(text, at: y, font: .systemFont(ofSize: 9))
+                page.text(String(localized: "\(room.roomName): floor \(Formatters.quantity(room.floorAreaHundredths, unit: .squareMeter)), walls gross \(Formatters.quantity(room.grossWallAreaHundredths, unit: .squareMeter)), openings \(Formatters.quantity(room.openingAreaHundredths, unit: .squareMeter)), \(room.doorCount) doors, \(room.windowCount) windows"),
+                          font: .systemFont(ofSize: 9))
             }
-            y += 14
+            page.y += 14
 
-            // Line items
-            y = drawRow([String(localized: "Pos."), String(localized: "Description"), String(localized: "Quantity"), String(localized: "Unit price"), String(localized: "Total")],
-                        at: y, font: .boldSystemFont(ofSize: 9))
-            y = drawRule(at: y)
+            // Line items – the header repeats on every page; rows never split.
+            page.beginTable()
             for (index, line) in calculation.lines.enumerated() {
-                y = ensureSpace(context, y: y, needed: 34, quote: quote, settings: settings)
                 var description = "\(line.roomName) – \(line.itemName) (\(line.itemCode))"
                 if let note = line.note { description += "\n\(note)" }
                 if line.wastePercent > 0 { description += "\n" + String(localized: "incl. \(line.wastePercent) % waste") }
-                y = drawRow([
+                page.row([
                     "\(index + 1)",
                     description,
                     Formatters.quantity(line.billedQuantityHundredths, unit: line.unit),
                     Formatters.money(line.unitPriceCents),
                     Formatters.money(line.totalCents),
-                ], at: y, font: .systemFont(ofSize: 9))
+                ])
             }
-            y = drawRule(at: y)
+            page.endTable()
 
             // Totals: net + VAT + gross for transparent B2C/B2B pricing.
-            y = ensureSpace(context, y: y, needed: 60, quote: quote, settings: settings)
+            page.ensureSpace(60)
             let vatPercent = (Double(calculation.vatRateBasisPoints) / 100).formatted(.number.precision(.fractionLength(0...2)))
-            y = drawTotal(String(localized: "Net total"), Formatters.money(calculation.netTotalCents), at: y, bold: false)
-            y = drawTotal(String(localized: "VAT \(vatPercent) %"), Formatters.money(calculation.vatCents), at: y, bold: false)
-            y = drawTotal(String(localized: "Gross total"), Formatters.money(calculation.grossTotalCents), at: y, bold: true)
-            y += 20
+            page.y = drawTotal(String(localized: "Net total"), Formatters.money(calculation.netTotalCents), at: page.y, bold: false)
+            page.y = drawTotal(String(localized: "VAT \(vatPercent) %"), Formatters.money(calculation.vatCents), at: page.y, bold: false)
+            page.y = drawTotal(String(localized: "Gross total"), Formatters.money(calculation.grossTotalCents), at: page.y, bold: true)
+            page.y += 14
+
+            // Validity and payment terms.
+            if quote.watermark == nil {
+                let days = max(settings.quoteValidityDays, 1)
+                let validUntil = (Calendar.current.date(byAdding: .day, value: days, to: quote.issuedAt) ?? quote.issuedAt)
+                    .formatted(date: .long, time: .omitted)
+                page.text(String(localized: "Valid until \(validUntil)"), font: .boldSystemFont(ofSize: 9))
+            }
+            if !settings.paymentTerms.isEmpty {
+                page.text(String(localized: "Payment terms: \(settings.paymentTerms)"), font: .systemFont(ofSize: 9))
+            }
+            page.y += 10
 
             // Notes: reproducibility, machine-assisted measurement, privacy notice.
             var notes = [
@@ -114,13 +136,83 @@ enum PDFGenerator {
                 notes.insert(String(localized: "Unit prices, VAT and totals were checked by our server against this price book when the quote number was assigned."), at: 1)
             }
             for note in notes {
-                y = ensureSpace(context, y: y, needed: 50, quote: quote, settings: settings)
-                y = draw(note, at: y, font: .systemFont(ofSize: 7.5), color: .darkGray) + 4
+                page.text(note, font: .systemFont(ofSize: 7.5), color: .darkGray)
+                page.y += 4
             }
+            pages = page.number
         }
+        return (data, pages)
     }
 
     // MARK: - Page layout
+
+    private static let footerHeight: CGFloat = 34
+    /// Lowest y content may reach; the footer lives below it.
+    private static var contentBottom: CGFloat { pageRect.height - margin - footerHeight }
+
+    /// Tracks the current page, draws header/footer on every new page and moves
+    /// content that does not fit to the next page.
+    private final class PageWriter {
+        let context: UIGraphicsPDFRendererContext
+        let quote: QuoteDocument
+        let settings: TenantSettings
+        let totalPages: Int?
+        var number = 0
+        var y: CGFloat = 0
+        private var inTable = false
+
+        init(context: UIGraphicsPDFRendererContext, quote: QuoteDocument, settings: TenantSettings, totalPages: Int?) {
+            self.context = context
+            self.quote = quote
+            self.settings = settings
+            self.totalPages = totalPages
+        }
+
+        func start() {
+            context.beginPage()
+            number += 1
+            if let watermark = quote.watermark {
+                PDFGenerator.drawWatermark(watermark, in: context.cgContext)
+            }
+            PDFGenerator.drawFooter(settings: settings, page: number, of: totalPages)
+            y = PDFGenerator.drawHeader(quote: quote, settings: settings, firstPage: number == 1)
+            if inTable { tableHeader() }
+        }
+
+        func ensureSpace(_ needed: CGFloat) {
+            if y + needed > PDFGenerator.contentBottom { start() }
+        }
+
+        /// Measures first, so a paragraph taller than the remaining space starts on the next page.
+        func text(_ string: String, font: UIFont, color: UIColor = .black) {
+            ensureSpace(PDFGenerator.height(of: string, font: font, width: PDFGenerator.pageRect.width - 2 * PDFGenerator.margin))
+            y = PDFGenerator.draw(string, at: y, font: font, color: color)
+        }
+
+        func beginTable() {
+            inTable = true
+            ensureSpace(60)
+            tableHeader()
+        }
+
+        func endTable() {
+            inTable = false
+            y = PDFGenerator.drawRule(at: y)
+        }
+
+        func row(_ cells: [String]) {
+            let font = UIFont.systemFont(ofSize: 9)
+            ensureSpace(PDFGenerator.rowHeight(cells, font: font))
+            y = PDFGenerator.drawRow(cells, at: y, font: font)
+        }
+
+        private func tableHeader() {
+            y = PDFGenerator.drawRow([String(localized: "Pos."), String(localized: "Description"), String(localized: "Quantity"),
+                                      String(localized: "Unit price"), String(localized: "Total")],
+                                     at: y, font: .boldSystemFont(ofSize: 9))
+            y = PDFGenerator.drawRule(at: y)
+        }
+    }
 
     private static func format(for quote: QuoteDocument) -> UIGraphicsPDFRendererFormat {
         let format = UIGraphicsPDFRendererFormat()
@@ -131,12 +223,13 @@ enum PDFGenerator {
         return format
     }
 
-    private static func startPage(_ context: UIGraphicsPDFRendererContext, quote: QuoteDocument, settings: TenantSettings) -> CGFloat {
-        context.beginPage()
-        if let watermark = quote.watermark {
-            drawWatermark(watermark, in: context.cgContext)
-        }
+    /// Full letterhead on the first page, a compact one on continuation pages.
+    private static func drawHeader(quote: QuoteDocument, settings: TenantSettings, firstPage: Bool) -> CGFloat {
         var y = margin
+        guard firstPage else {
+            y = draw(String(localized: "Quote \(quote.number) (continued)"), at: y, font: .boldSystemFont(ofSize: 10), color: .darkGray)
+            return y + 10
+        }
         y = draw(settings.firmName, at: y, font: .boldSystemFont(ofSize: 16))
         if !settings.firmAddress.isEmpty {
             y = draw(settings.firmAddress, at: y, font: .systemFont(ofSize: 9), color: .darkGray)
@@ -157,8 +250,42 @@ enum PDFGenerator {
         return y + 14
     }
 
-    private static func ensureSpace(_ context: UIGraphicsPDFRendererContext, y: CGFloat, needed: CGFloat, quote: QuoteDocument, settings: TenantSettings) -> CGFloat {
-        y + needed > pageRect.height - margin ? startPage(context, quote: quote, settings: settings) : y
+    /// Company details (German letter footer) and the page number.
+    private static func drawFooter(settings: TenantSettings, page: Int, of total: Int?) {
+        let top = pageRect.height - margin - footerHeight + 8
+        let path = UIBezierPath()
+        path.move(to: CGPoint(x: margin, y: top - 4))
+        path.addLine(to: CGPoint(x: pageRect.width - margin, y: top - 4))
+        UIColor.lightGray.setStroke()
+        path.lineWidth = 0.5
+        path.stroke()
+
+        let address = settings.firmAddress.split(whereSeparator: \.isNewline).joined(separator: ", ")
+        let line1 = [settings.firmName, address, settings.phone, settings.email].filter { !$0.isEmpty }.joined(separator: " · ")
+        let line2 = [
+            settings.taxNumber.isEmpty ? nil : String(localized: "Tax no. \(settings.taxNumber)"),
+            settings.vatID.isEmpty ? nil : String(localized: "VAT ID \(settings.vatID)"),
+            settings.bankIBAN.isEmpty ? nil : String(localized: "IBAN \(settings.bankIBAN)"),
+        ].compactMap { $0 }.joined(separator: " · ")
+        let pageLabel = total.map { String(localized: "Page \(page) of \($0)") } ?? String(localized: "Page \(page)")
+        let width = pageRect.width - 2 * margin
+        _ = draw([line1, line2].filter { !$0.isEmpty }.joined(separator: "\n"),
+                 in: CGRect(x: margin, y: top, width: width - 80, height: footerHeight), font: .systemFont(ofSize: 7), color: .darkGray)
+        _ = draw(pageLabel, in: CGRect(x: pageRect.width - margin - 80, y: top, width: 80, height: 12),
+                 font: .systemFont(ofSize: 7), color: .darkGray, alignment: .right)
+    }
+
+    /// Height a wrapped text needs at the given width (same metrics as `draw`).
+    private static func height(of text: String, font: UIFont, width: CGFloat) -> CGFloat {
+        let string = NSAttributedString(string: text, attributes: [.font: font])
+        let bounds = string.boundingRect(with: CGSize(width: width, height: .greatestFiniteMagnitude),
+                                         options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
+        return ceil(bounds.height) + 2
+    }
+
+    /// Height of a table row (tallest cell + row spacing), measured before drawing.
+    private static func rowHeight(_ cells: [String], font: UIFont) -> CGFloat {
+        zip(cells, columns).map { height(of: $0, font: font, width: $1.width) }.max().map { $0 + 4 } ?? 0
     }
 
     private static func drawWatermark(_ text: String, in context: CGContext) {
