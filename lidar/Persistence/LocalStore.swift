@@ -93,12 +93,16 @@ private struct QuotePayload: Encodable {
 /// outbox entry in the same SwiftData save (offline-first, nothing lost).
 /// Top-level payload keys are snake_case for Postgres; nested JSON (measurement,
 /// calculation) keeps its canonical form so the server copy matches the hash.
-enum LocalStoreError: LocalizedError {
+enum LocalStoreError: LocalizedError, Equatable {
     case samplePriceBook
+    case emptyRoomName
+    case duplicateRoomName(String)
 
     var errorDescription: String? {
         switch self {
         case .samplePriceBook: String(localized: "Sample prices – sign in and sync to issue real quotes.")
+        case .emptyRoomName: String(localized: "Enter a room name.")
+        case .duplicateRoomName(let name): String(localized: "This job already has a room named “\(name)”.")
         }
     }
 }
@@ -190,6 +194,38 @@ enum LocalStore {
         ), in: context)
         try context.save()
         return quote
+    }
+
+    // MARK: - Rooms
+
+    /// Room names are unique per job (trimmed, case-insensitive).
+    static func isRoomName(_ name: String, takenIn job: Job, excluding survey: Survey? = nil) -> Bool {
+        let key = normalizedRoomName(name)
+        return job.surveys.contains { $0.id != survey?.id && normalizedRoomName($0.roomName) == key }
+    }
+
+    static func normalizedRoomName(_ name: String) -> String {
+        name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    /// Validates a new room name for a job; returns the trimmed name.
+    static func validatedRoomName(_ name: String, in job: Job, excluding survey: Survey? = nil) throws -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw LocalStoreError.emptyRoomName }
+        guard !isRoomName(trimmed, takenIn: job, excluding: survey) else { throw LocalStoreError.duplicateRoomName(trimmed) }
+        return trimmed
+    }
+
+    /// Renames a room and queues exactly one upsert – only when the name really changed.
+    /// - Returns: `true` when a change was saved.
+    @discardableResult
+    static func rename(survey: Survey, to name: String, in context: ModelContext) throws -> Bool {
+        guard let job = survey.job else { return false }
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed != survey.roomName else { return false }
+        survey.roomName = try validatedRoomName(trimmed, in: job, excluding: survey)
+        try save(survey: survey, in: context)
+        return true
     }
 
     // MARK: - Deletes

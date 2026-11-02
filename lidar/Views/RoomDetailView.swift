@@ -5,12 +5,24 @@ struct RoomDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var survey: Survey
 
+    /// Edited copy of the name; written back (with one outbox entry) only on commit.
+    @State private var name = ""
+    @State private var nameError: String?
+    @FocusState private var isNameFocused: Bool
+
     var body: some View {
         let m = survey.measurement
         List {
             Section("Room") {
-                TextField("Name", text: $survey.roomName)
-                    .onSubmit { try? LocalStore.save(survey: survey, in: modelContext) }
+                TextField("Name", text: $name)
+                    .focused($isNameFocused)
+                    .submitLabel(.done)
+                    .onSubmit(commitName)
+                if let nameError {
+                    Text(nameError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
                 LabeledContent("Source", value: m.source == .roomPlan ? String(localized: "LiDAR scan") : String(localized: "Manual entry"))
                 if m.manuallyAdjusted {
                     Label("Manually adjusted", systemImage: "pencil.and.ruler")
@@ -51,6 +63,21 @@ struct RoomDetailView: View {
             }
         }
         .navigationTitle(survey.roomName)
+        .onAppear { name = survey.roomName }
+        .onChange(of: isNameFocused) { _, focused in
+            if !focused { commitName() }
+        }
+        .onDisappear(perform: commitName)
+    }
+
+    private func commitName() {
+        do {
+            try LocalStore.rename(survey: survey, to: name, in: modelContext)
+            nameError = nil
+            name = survey.roomName
+        } catch {
+            nameError = error.localizedDescription
+        }
     }
 }
 
