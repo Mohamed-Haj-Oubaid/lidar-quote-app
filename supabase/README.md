@@ -85,6 +85,34 @@ select public.admin_create_company('Malerbetrieb Muster GmbH', 'MUS', 'owner@fir
 - The owner invites workers from the app (`invite_member`); they sign in the same way.
 - Suspend a company: `select public.admin_set_company_active('<company id>', false);`
 
+### Delete a company (contract end, AVV / Art. 28 GDPR)
+
+1. Export the data for the customer first if they want it (the owner can do this in the
+   app: Settings → Company → Export).
+2. In the SQL Editor:
+   ```sql
+   select public.admin_delete_company('<company id>', '<exact company name>');
+   ```
+   The name must match exactly (safety check). This deletes the members' accounts, all
+   quotes, jobs, rooms, price books and audit rows of that company. A tenant-less audit
+   row `company.deleted` is kept. The function returns the storage prefix, e.g.
+   `3f2a…/`.
+3. **Storage → survey-media**: open the folder with that prefix and delete it
+   (or use the Storage API: list the prefix, then delete the objects).
+   Storage files must never be deleted with SQL `delete` – that leaves the files behind.
+
+### Review old "privacy notice shown" stamps
+
+Before migration 07 the server stamped *every* job as "client informed". These rows
+cannot be repaired automatically. List suspicious ones (stamp = creation time):
+
+```sql
+select * from public.admin_list_suspect_privacy_stamps();
+```
+
+Check with the company and clear wrong stamps:
+`update public.jobs set privacy_notice_confirmed_at = null where id = '<job id>';`
+
 ## 8. Values for the app
 
 Send to the developer **only**:

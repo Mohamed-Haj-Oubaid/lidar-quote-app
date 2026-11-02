@@ -122,6 +122,105 @@ language sql stable security definer set search_path = '' as $$
     order by j.tenant_id, j.created_at
 $$;
 
+-- -----------------------------------------------------------------------------
+-- C2 · Users and whole companies must be deletable (GDPR / AVV contract end)
+--
+-- Deleting an auth.users row makes Postgres run "set issued_by = null" on that
+-- user's quotes (FK on delete set null), which the append-only guard rejected.
+-- Deleting a tenant cascaded into quotes, which the guard also rejected.
+--
+--   * issued_by / published_by may change ONLY from a value to NULL.
+--   * DELETE is allowed only inside public.admin_delete_company(), which sets
+--     the transaction-local flag app.purge_tenant to the tenant being purged.
+--     API roles have no DELETE privilege and no RPC deletes quotes, so the
+--     flag cannot be abused from the app.
+-- -----------------------------------------------------------------------------
+
+create or replace function app.guard_quote() returns trigger
+language plpgsql set search_path = '' as $$
+declare
+    -- status_changed_by stays mutable: set_quote_status records who changed the status.
+    mutable constant text[] := array['status', 'status_changed_at', 'status_changed_by', 'client_signed_at',
+                                     'row_seq', 'changed_at', 'issued_by'];
+begin
+    if tg_op = 'DELETE' then
+        if current_setting('app.purge_tenant', true) = old.tenant_id::text then
+            return old;
+        end if;
+        raise exception 'issued quotes cannot be deleted';
+    end if;
+    if (to_jsonb(new) - mutable) is distinct from (to_jsonb(old) - mutable) then
+        raise exception 'issued quotes are immutable; issue a new revision';
+    end if;
+    -- The FK "on delete set null" case is the only allowed change of issued_by.
+    if new.issued_by is distinct from old.issued_by and new.issued_by is not null then
+        raise exception 'issued quotes are immutable; issued_by can only be cleared';
+    end if;
+    return new;
+end $$;
+
+create or replace function app.guard_price_book_version() returns trigger
+language plpgsql set search_path = '' as $$
+declare
+    mutable constant text[] := array['is_active', 'row_seq', 'changed_at', 'published_by'];
+begin
+    if tg_op = 'DELETE' then
+        if current_setting('app.purge_tenant', true) = old.tenant_id::text then
+            return old;
+        end if;
+        raise exception 'published price-book versions cannot be deleted';
+    end if;
+    if (to_jsonb(new) - mutable) is distinct from (to_jsonb(old) - mutable) then
+        raise exception 'published price-book versions are immutable; publish a new version';
+    end if;
+    if new.published_by is distinct from old.published_by and new.published_by is not null then
+        raise exception 'published price-book versions are immutable; published_by can only be cleared';
+    end if;
+    return new;
+end $$;
+
+drop trigger if exists price_book_versions_immutable on public.price_book_versions;
+create trigger price_book_versions_immutable before update or delete on public.price_book_versions
+    for each row execute function app.guard_price_book_version();
+
+-- Operator: erase a company completely at contract end (AVV, Art. 28 GDPR).
+-- Deletes the members' accounts, all quotes (normally append-only) and the
+-- tenant row – everything else cascades. Returns the storage prefix whose
+-- objects the operator must then delete through the Storage API / dashboard
+-- (storage objects must never be deleted with SQL).
+create or replace function public.admin_delete_company(p_tenant_id uuid, p_confirm_name text) returns text
+language plpgsql security definer set search_path = '' as $$
+declare
+    v_name  text;
+    v_users integer;
+begin
+    select name into v_name from public.tenants where id = p_tenant_id for update;
+    if v_name is null then
+        raise exception 'unknown company' using errcode = '22023';
+    end if;
+    if p_confirm_name is distinct from v_name then
+        raise exception 'confirmation name does not match the company name' using errcode = '22023';
+    end if;
+
+    perform set_config('app.purge_tenant', p_tenant_id::text, true);
+
+    -- Accounts of the company's members (memberships cascade; FKs elsewhere set null).
+    delete from auth.users where id in (select user_id from public.tenant_members where tenant_id = p_tenant_id);
+    get diagnostics v_users = row_count;
+
+    delete from public.quotes where tenant_id = p_tenant_id;
+    delete from public.tenants where id = p_tenant_id;
+
+    perform set_config('app.purge_tenant', '', true);
+
+    -- The tenant's own audit rows are gone with it; keep a tenant-less record.
+    insert into public.audit_log (tenant_id, action, entity_id, details)
+    values (null, 'company.deleted', p_tenant_id,
+            jsonb_build_object('deleted_tenant', p_tenant_id, 'name', v_name, 'deleted_users', v_users));
+
+    return p_tenant_id::text || '/';
+end $$;
+
 -- =============================================================================
 -- Permissions: keep the whitelist model (blanket revoke, explicit grants)
 -- =============================================================================
@@ -155,6 +254,7 @@ grant execute on function public.admin_create_company(text, text, text, text) to
 grant execute on function public.admin_record_avv(uuid, text)                 to service_role;
 grant execute on function public.admin_set_company_active(uuid, boolean)      to service_role;
 grant execute on function public.admin_list_suspect_privacy_stamps()          to service_role;
+grant execute on function public.admin_delete_company(uuid, text)             to service_role;
 
 -- Auth hooks: Supabase Auth only.
 grant execute on function public.hook_before_user_created(jsonb) to supabase_auth_admin;

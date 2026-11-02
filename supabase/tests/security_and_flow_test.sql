@@ -468,6 +468,84 @@ begin
     raise notice 'ok C1: privacy and signing timestamps are only stored when sent';
 end $$;
 
+-- -----------------------------------------------------------------------------
+-- C2. Deleting users and whole companies
+-- -----------------------------------------------------------------------------
+do $$
+declare
+    d      uuid;
+    r      jsonb;
+    v_pbv  uuid;
+    v_pref text;
+    v_left bigint;
+begin
+    d := public.admin_create_company('Firma D', 'FD', 'owner@d.de', 'AVV-2026-1');
+    insert into test_ctx.kv values ('tenant_d', d);
+    insert into auth.users (id, email) values ('66666666-6666-6666-6666-666666666666', 'owner@d.de');
+
+    perform test_ctx.login('66666666-6666-6666-6666-666666666666');
+    set local role authenticated;
+    v_pbv := public.publish_price_book_version(null, 'Standard D', 1900, test_ctx.items());
+    perform public.invite_member('worker@d.de', 'estimator');
+    r := public.push_mutations(jsonb_build_array(
+        test_ctx.mutation('c2000000-0000-0000-0000-000000000001', 'upsert_job',
+            jsonb_build_object('id', 'c2a00000-0000-0000-0000-000000000001', 'title', 'D job', 'updated_at', now())),
+        test_ctx.mutation('c2000000-0000-0000-0000-000000000002', 'issue_quote', jsonb_build_object(
+            'id', 'c2b00000-0000-0000-0000-000000000001', 'job_id', 'c2a00000-0000-0000-0000-000000000001',
+            'revision', 1, 'provisional_number', 'OFFLINE-TEMP-D-0001', 'issued_at', now(), 'price_book_version_id', v_pbv,
+            'engine_version', '1.0.0', 'calculation', '{"netTotalCents":0,"grossTotalCents":0,"lines":[]}'::jsonb,
+            'snapshot_sha256', repeat('d', 64), 'net_total_cents', 0, 'gross_total_cents', 0))));
+    assert r -> 1 ->> 'status' = 'applied', r::text;
+    reset role;
+    insert into auth.users (id, email) values ('77777777-7777-7777-7777-777777777777', 'worker@d.de');
+
+    -- issued_by may only be cleared, never reassigned.
+    perform test_ctx.expect_error($q$update public.quotes set issued_by = '77777777-7777-7777-7777-777777777777'
+                                     where id = 'c2b00000-0000-0000-0000-000000000001'$q$, 'immutable');
+    perform test_ctx.expect_error($q$update public.price_book_versions set published_by = '77777777-7777-7777-7777-777777777777'
+                                     where tenant_id = '$q$ || d || $q$'$q$, 'immutable');
+
+    -- Deleting the account that issued the quote and published the price book succeeds.
+    delete from auth.users where id = '66666666-6666-6666-6666-666666666666';
+    assert (select issued_by from public.quotes where id = 'c2b00000-0000-0000-0000-000000000001') is null, 'C2: issued_by cleared';
+    assert (select published_by from public.price_book_versions where id = v_pbv) is null, 'C2: published_by cleared';
+
+    -- Plain deletes are still refused.
+    perform test_ctx.expect_error($q$delete from public.quotes where id = 'c2b00000-0000-0000-0000-000000000001'$q$, 'cannot be deleted');
+    perform test_ctx.expect_error(format($q$delete from public.price_book_versions where id = '%s'$q$, v_pbv), 'cannot be deleted');
+
+    -- App users cannot reach the operator purge.
+    perform test_ctx.login('55555555-5555-5555-5555-555555555555');
+    set local role authenticated;
+    perform test_ctx.expect_error(format($q$select public.admin_delete_company('%s', 'Firma D')$q$, d), 'permission denied');
+    reset role;
+
+    perform test_ctx.expect_error(format($q$select public.admin_delete_company('%s', 'firma d')$q$, d), 'does not match');
+
+    v_pref := public.admin_delete_company(d, 'Firma D');
+    assert v_pref = d::text || '/', v_pref;
+    select (select count(*) from public.tenants where id = d)
+         + (select count(*) from public.tenant_members where tenant_id = d)
+         + (select count(*) from public.tenant_invitations where tenant_id = d)
+         + (select count(*) from public.price_books where tenant_id = d)
+         + (select count(*) from public.price_book_versions where tenant_id = d)
+         + (select count(*) from public.jobs where tenant_id = d)
+         + (select count(*) from public.surveys where tenant_id = d)
+         + (select count(*) from public.quotes where tenant_id = d)
+         + (select count(*) from public.quote_counters where tenant_id = d)
+         + (select count(*) from public.processed_mutations where tenant_id = d)
+         + (select count(*) from public.audit_log where tenant_id = d)
+      into v_left;
+    assert v_left = 0, 'C2: rows of the purged company remain: ' || v_left;
+    assert not exists (select 1 from auth.users where id = '77777777-7777-7777-7777-777777777777'), 'C2: member accounts deleted';
+    assert exists (select 1 from public.audit_log where tenant_id is null and action = 'company.deleted'
+                   and details ->> 'name' = 'Firma D'), 'C2: tenant-less audit record';
+    assert coalesce(current_setting('app.purge_tenant', true), '') = '', 'C2: purge flag reset';
+    -- Company C is untouched.
+    assert exists (select 1 from public.quotes where id = 'c1b00000-0000-0000-0000-000000000001'), 'C2: other company untouched';
+    raise notice 'ok C2: users and companies are deletable; quotes stay immutable otherwise';
+end $$;
+
 do $$ begin raise notice 'ALL CHECKS PASSED'; end $$;
 
 rollback;
