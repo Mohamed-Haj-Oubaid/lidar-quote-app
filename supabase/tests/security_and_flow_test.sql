@@ -46,6 +46,14 @@ create function test_ctx.mutation(p_key text, p_kind text, p_payload jsonb) retu
     select jsonb_build_object('idempotency_key', p_key, 'kind', p_kind, 'payload', p_payload)
 $$;
 
+-- A calculation that adds up against test_ctx.items() at 19 % VAT (10 m² × 12.50 €),
+-- in the engine-1.0.0 shape (lines matched by item code).
+create function test_ctx.calc() returns jsonb language sql immutable as $$
+    select '{"netTotalCents":12500,"vatRateBasisPoints":1900,"vatCents":2375,"grossTotalCents":14875,
+             "lines":[{"roomName":"Bad","itemCode":"MAL-01","billedQuantityHundredths":1000,
+                       "unitPriceCents":1250,"totalCents":12500}]}'::jsonb
+$$;
+
 -- -----------------------------------------------------------------------------
 -- 1. Operator creates two companies; only invited people can join
 -- -----------------------------------------------------------------------------
@@ -82,7 +90,7 @@ declare
     v_pbv  uuid;
     r      jsonb;
     v_year text := extract(year from (now() at time zone 'Europe/Berlin'))::text;
-    v_calc jsonb := '{"netTotalCents":1000,"grossTotalCents":1190,"lines":[]}';
+    v_calc jsonb := test_ctx.calc();
 begin
     perform test_ctx.login('11111111-1111-1111-1111-111111111111');
     set local role authenticated;
@@ -108,7 +116,7 @@ begin
             'id', 'a0000000-0000-0000-0000-000000000003', 'job_id', 'a0000000-0000-0000-0000-000000000001',
             'kind', 'preliminary', 'revision', 1, 'provisional_number', 'OFFLINE-TEMP-ABCD-0001',
             'issued_at', now(), 'price_book_version_id', v_pbv, 'engine_version', '1.0.0',
-            'calculation', v_calc, 'snapshot_sha256', repeat('a', 64), 'net_total_cents', 1000, 'gross_total_cents', 1190)),
+            'calculation', v_calc, 'snapshot_sha256', repeat('a', 64), 'net_total_cents', 12500, 'gross_total_cents', 14875)),
         test_ctx.mutation('b0000000-0000-0000-0000-000000000004', 'drop_tables', '{}'::jsonb),
         test_ctx.mutation('b0000000-0000-0000-0000-000000000005', 'issue_quote', jsonb_build_object(
             'id', 'a0000000-0000-0000-0000-000000000009', 'job_id', 'a0000000-0000-0000-0000-000000000001',
@@ -134,7 +142,7 @@ begin
             'kind', 'final', 'revision', 2, 'supersedes_quote_id', 'a0000000-0000-0000-0000-000000000003',
             'provisional_number', 'OFFLINE-TEMP-ABCD-0002', 'issued_at', now(), 'price_book_version_id', v_pbv,
             'engine_version', '1.0.0', 'calculation', v_calc, 'snapshot_sha256', repeat('b', 64),
-            'net_total_cents', 1000, 'gross_total_cents', 1190))));
+            'net_total_cents', 12500, 'gross_total_cents', 14875))));
     assert r -> 0 ->> 'final_number' = 'MALA-' || v_year || '-00002', r::text;
 
     -- Lifecycle: the superseded preliminary quote cannot be sent any more.
@@ -454,8 +462,8 @@ begin
         test_ctx.mutation('c1000000-0000-0000-0000-000000000004', 'issue_quote', jsonb_build_object(
             'id', 'c1b00000-0000-0000-0000-000000000001', 'job_id', 'c1a00000-0000-0000-0000-000000000001',
             'revision', 1, 'provisional_number', 'OFFLINE-TEMP-C-0001', 'issued_at', now(), 'price_book_version_id', v_pbv,
-            'engine_version', '1.0.0', 'calculation', '{"netTotalCents":0,"grossTotalCents":0,"lines":[]}'::jsonb,
-            'snapshot_sha256', repeat('c', 64), 'net_total_cents', 0, 'gross_total_cents', 0)),
+            'engine_version', '1.0.0', 'calculation', test_ctx.calc(),
+            'snapshot_sha256', repeat('c', 64), 'net_total_cents', 12500, 'gross_total_cents', 14875)),
         test_ctx.mutation('c1000000-0000-0000-0000-000000000005', 'set_quote_status',
             '{"quote_id":"c1b00000-0000-0000-0000-000000000001","status":"accepted"}'::jsonb)));
     assert r -> 0 ->> 'status' = 'applied' and r -> 1 ->> 'status' = 'applied', r::text;
@@ -493,8 +501,8 @@ begin
         test_ctx.mutation('c2000000-0000-0000-0000-000000000002', 'issue_quote', jsonb_build_object(
             'id', 'c2b00000-0000-0000-0000-000000000001', 'job_id', 'c2a00000-0000-0000-0000-000000000001',
             'revision', 1, 'provisional_number', 'OFFLINE-TEMP-D-0001', 'issued_at', now(), 'price_book_version_id', v_pbv,
-            'engine_version', '1.0.0', 'calculation', '{"netTotalCents":0,"grossTotalCents":0,"lines":[]}'::jsonb,
-            'snapshot_sha256', repeat('d', 64), 'net_total_cents', 0, 'gross_total_cents', 0))));
+            'engine_version', '1.0.0', 'calculation', test_ctx.calc(),
+            'snapshot_sha256', repeat('d', 64), 'net_total_cents', 12500, 'gross_total_cents', 14875))));
     assert r -> 1 ->> 'status' = 'applied', r::text;
     reset role;
     insert into auth.users (id, email) values ('77777777-7777-7777-7777-777777777777', 'worker@d.de');
@@ -561,8 +569,8 @@ begin
             'id', 'c5b00000-0000-0000-0000-000000000001', 'job_id', 'c1a00000-0000-0000-0000-000000000001',
             'revision', 2, 'provisional_number', 'OFFLINE-TEMP-C-0002', 'issued_at', now(),
             'price_book_version_id', gen_random_uuid(), 'engine_version', '1.0.0',
-            'calculation', '{"netTotalCents":0,"grossTotalCents":0,"lines":[]}'::jsonb,
-            'snapshot_sha256', repeat('c', 64), 'net_total_cents', 0, 'gross_total_cents', 0)),
+            'calculation', test_ctx.calc(),
+            'snapshot_sha256', repeat('c', 64), 'net_total_cents', 12500, 'gross_total_cents', 14875)),
         test_ctx.mutation('c5000000-0000-0000-0000-000000000002', 'upsert_survey', jsonb_build_object(
             'id', 'c5c00000-0000-0000-0000-000000000001', 'job_id', gen_random_uuid(),
             'room_name', 'x', 'measurement', '{}'::jsonb, 'captured_at', now(), 'updated_at', now())),
@@ -577,6 +585,63 @@ begin
     assert app.is_retryable_sqlstate('40001') and app.is_retryable_sqlstate('55P03')
        and not app.is_retryable_sqlstate('P0001'), 'C5: classification';
     raise notice 'ok C5: rejected results carry sqlstate and retryable';
+end $$;
+
+-- -----------------------------------------------------------------------------
+-- H5. Server verifies the hash over the exact bytes and recomputes the totals
+-- -----------------------------------------------------------------------------
+create function test_ctx.calc_json(p_pbv text, p_unit integer, p_vat_bp integer) returns text language sql immutable as $$
+    -- Same shape as the app's canonical JSON (sorted keys, unescaped "/").
+    select format('{"engineVersion":"1.1.0","grossTotalCents":%s,"lines":[{"billedQuantityHundredths":1000,'
+               || '"itemCode":"MAL-01","itemID":"6F1C2A52-8D1E-4B7A-9F0E-0C1D2E3F4A5B","roomName":"Bad/WC",'
+               || '"totalCents":%s,"unitPriceCents":%s}],"netTotalCents":%s,"priceBookVersionID":"%s",'
+               || '"vatCents":%s,"vatRateBasisPoints":%s}',
+                  10 * p_unit + app.round_div(10 * p_unit * p_vat_bp, 10000), 10 * p_unit, p_unit, 10 * p_unit,
+                  upper(p_pbv), app.round_div(10 * p_unit * p_vat_bp, 10000), p_vat_bp)
+$$;
+
+create function test_ctx.quote_mutation(p_n integer, p_json text, p_sha text) returns jsonb language sql stable as $$
+    select test_ctx.mutation(format('a5000000-0000-0000-0000-%s', lpad(p_n::text, 12, '0')), 'issue_quote', jsonb_build_object(
+        'id', format('a5b00000-0000-0000-0000-%s', lpad(p_n::text, 12, '0')),
+        'job_id', 'c1a00000-0000-0000-0000-000000000001', 'revision', 10 + p_n,
+        'provisional_number', 'OFFLINE-TEMP-H5-' || p_n, 'issued_at', now(),
+        'price_book_version_id', test_ctx.get('pbv_c'), 'engine_version', '1.1.0',
+        'calculation', p_json::jsonb, 'calculation_json', p_json, 'snapshot_sha256', p_sha,
+        'net_total_cents', (p_json::jsonb ->> 'netTotalCents')::bigint,
+        'gross_total_cents', (p_json::jsonb ->> 'grossTotalCents')::bigint))
+$$;
+
+do $$
+declare
+    v_pbv      text := test_ctx.get('pbv_c');
+    v_good     text := test_ctx.calc_json(v_pbv, 1250, 1900);
+    v_tampered text := test_ctx.calc_json(v_pbv, 1000, 1900);
+    v_wrongvat text := test_ctx.calc_json(v_pbv, 1250, 700);
+    r          jsonb;
+    v_raw      text;
+begin
+    perform test_ctx.login('55555555-5555-5555-5555-555555555555');
+    set local role authenticated;
+    r := public.push_mutations(jsonb_build_array(
+        test_ctx.quote_mutation(1, v_tampered, encode(extensions.digest(convert_to(v_tampered, 'UTF8'), 'sha256'), 'hex')),
+        test_ctx.quote_mutation(2, v_wrongvat, encode(extensions.digest(convert_to(v_wrongvat, 'UTF8'), 'sha256'), 'hex')),
+        test_ctx.quote_mutation(3, v_good, repeat('e', 64)),
+        test_ctx.quote_mutation(4, v_good, encode(extensions.digest(convert_to(v_good, 'UTF8'), 'sha256'), 'hex'))));
+    reset role;
+
+    assert r -> 0 ->> 'status' = 'rejected' and r -> 0 ->> 'error' like '%unit price 1000 does not match%', r::text;
+    assert r -> 1 ->> 'status' = 'rejected' and r -> 1 ->> 'error' like 'VAT rate 700 does not match%', r::text;
+    assert r -> 2 ->> 'status' = 'rejected' and r -> 2 ->> 'error' like 'snapshot hash does not match%', r::text;
+    assert (r -> 0 -> 'retryable') = 'false'::jsonb and r -> 2 ->> 'sqlstate' = 'P0001', r::text;
+    assert r -> 3 ->> 'status' = 'applied' and r -> 3 ->> 'final_number' like 'FC-%', r::text;
+
+    select calculation_raw into v_raw from public.quotes where id = 'a5b00000-0000-0000-0000-000000000004';
+    assert v_raw = v_good, 'H5: raw bytes stored verbatim';
+    assert encode(extensions.digest(convert_to(v_raw, 'UTF8'), 'sha256'), 'hex')
+         = (select snapshot_sha256 from public.quotes where id = 'a5b00000-0000-0000-0000-000000000004'), 'H5: stored bytes reproduce the hash';
+    assert not exists (select 1 from public.quotes where id in ('a5b00000-0000-0000-0000-000000000001',
+        'a5b00000-0000-0000-0000-000000000002', 'a5b00000-0000-0000-0000-000000000003')), 'H5: rejected quotes not stored';
+    raise notice 'ok H5: tampered prices, wrong VAT and hash mismatches are rejected; raw calculation stored';
 end $$;
 
 -- -----------------------------------------------------------------------------

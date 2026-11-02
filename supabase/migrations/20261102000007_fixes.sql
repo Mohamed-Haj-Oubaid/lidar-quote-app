@@ -320,6 +320,168 @@ begin
     return v_results;
 end $$;
 
+-- -----------------------------------------------------------------------------
+-- H5 · Verify the integrity hash and the quote arithmetic on the server
+--
+-- jsonb reorders keys and normalises whitespace, so the device's SHA-256 could
+-- never be reproduced from quotes.calculation. Engine ≥ 1.1.0 sends the exact
+-- canonical bytes as calculation_json; the server checks the hash over those
+-- bytes, keeps them verbatim in calculation_raw and parses them into
+-- calculation. Every quote's arithmetic is recomputed against the price book
+-- (unit prices, VAT rate, rounding) before an official number is assigned.
+-- Requires pgcrypto, which Supabase installs in the "extensions" schema.
+-- -----------------------------------------------------------------------------
+
+create extension if not exists pgcrypto with schema extensions;
+
+alter table public.quotes add column if not exists calculation_raw text;
+
+-- Integer division rounding half away from zero – identical to EstimationEngine.roundedDivide.
+create or replace function app.round_div(p_value bigint, p_divisor bigint) returns bigint
+language sql immutable set search_path = '' as $$
+    select case when p_value >= 0 then (p_value + p_divisor / 2) / p_divisor
+                else -((-p_value + p_divisor / 2) / p_divisor) end
+$$;
+
+-- Raises P0001 with a clear message when the calculation does not add up.
+create or replace function app.verify_quote_calculation(p_calc jsonb, p_version public.price_book_versions) returns void
+language plpgsql stable set search_path = '' as $$
+declare
+    v_line   jsonb;
+    v_item   jsonb;
+    v_sum    bigint := 0;
+    v_net    bigint;
+    v_vat_bp integer;
+    v_label  text;
+begin
+    if jsonb_typeof(p_calc -> 'lines') is distinct from 'array' then
+        raise exception 'calculation has no lines array' using errcode = 'P0001';
+    end if;
+    if p_calc ? 'priceBookVersionID' and (p_calc ->> 'priceBookVersionID')::uuid <> p_version.id then
+        raise exception 'calculation was made with a different price-book version' using errcode = 'P0001';
+    end if;
+
+    for v_line in select value from jsonb_array_elements(p_calc -> 'lines') loop
+        v_label := coalesce(v_line ->> 'roomName', '?') || ' / ' || coalesce(v_line ->> 'itemCode', '?');
+        -- Match the price item by id (engine ≥ 1.1.0), else by code (1.0.0 quotes).
+        select item into v_item from jsonb_array_elements(p_version.items) as e(item)
+        where case when v_line ? 'itemID' then lower(item ->> 'id') = lower(v_line ->> 'itemID')
+                   else item ->> 'code' = v_line ->> 'itemCode' end
+        limit 1;
+        if v_item is null then
+            raise exception 'line %: item is not in price-book version %', v_label, p_version.version using errcode = 'P0001';
+        end if;
+        if (v_line ->> 'unitPriceCents')::bigint is distinct from (v_item ->> 'unitPriceCents')::bigint then
+            raise exception 'line %: unit price % does not match the price book (%)', v_label,
+                v_line ->> 'unitPriceCents', v_item ->> 'unitPriceCents' using errcode = 'P0001';
+        end if;
+        if (v_line ->> 'totalCents')::bigint is distinct from
+           app.round_div((v_line ->> 'billedQuantityHundredths')::bigint * (v_line ->> 'unitPriceCents')::bigint, 100) then
+            raise exception 'line %: total does not match quantity × unit price', v_label using errcode = 'P0001';
+        end if;
+        v_sum := v_sum + (v_line ->> 'totalCents')::bigint;
+    end loop;
+
+    v_net := (p_calc ->> 'netTotalCents')::bigint;
+    if v_net is distinct from v_sum then
+        raise exception 'net total % does not equal the sum of the lines (%)', v_net, v_sum using errcode = 'P0001';
+    end if;
+    v_vat_bp := (p_calc ->> 'vatRateBasisPoints')::integer;
+    if v_vat_bp is distinct from p_version.vat_rate_bp then
+        raise exception 'VAT rate % does not match the price book (%)', v_vat_bp, p_version.vat_rate_bp using errcode = 'P0001';
+    end if;
+    if (p_calc ->> 'vatCents')::bigint is distinct from app.round_div(v_net * v_vat_bp, 10000) then
+        raise exception 'VAT amount does not match net total × VAT rate' using errcode = 'P0001';
+    end if;
+    if (p_calc ->> 'grossTotalCents')::bigint is distinct from v_net + (p_calc ->> 'vatCents')::bigint then
+        raise exception 'gross total does not equal net + VAT' using errcode = 'P0001';
+    end if;
+end $$;
+
+create or replace function app.m_issue_quote(t public.tenants, v_role public.member_role, v_user uuid, p jsonb) returns jsonb
+language plpgsql set search_path = '' as $$
+declare
+    v_id        uuid := (p ->> 'id')::uuid;
+    v_job_id    uuid := (p ->> 'job_id')::uuid;
+    v_kind      public.quote_kind := coalesce((p ->> 'kind')::public.quote_kind, 'final');
+    v_supersede uuid := (p ->> 'supersedes_quote_id')::uuid;
+    v_version   public.price_book_versions;
+    v_raw       text := p ->> 'calculation_json';
+    v_calc      jsonb;
+    v_year      integer;
+    v_seq       integer;
+    v_number    text;
+begin
+    if t.avv_signed_at is null then
+        raise exception 'AVV (data-processing agreement) not signed for this company';
+    end if;
+    if v_kind = 'final' and v_role = 'estimator' and not t.estimator_can_issue_final then
+        raise exception 'only Owner or Admin may issue final quotes';
+    end if;
+    if not exists (select 1 from public.jobs where id = v_job_id and tenant_id = t.id and deleted_at is null) then
+        raise exception 'unknown job';
+    end if;
+    select * into v_version from public.price_book_versions
+    where id = (p ->> 'price_book_version_id')::uuid and tenant_id = t.id;
+    if not found then
+        raise exception 'unknown price-book version (quotes from the sample price book cannot be finalized)';
+    end if;
+    if v_supersede is not null and not exists (
+        select 1 from public.quotes where id = v_supersede and job_id = v_job_id and tenant_id = t.id) then
+        raise exception 'superseded quote not found for this job';
+    end if;
+    if exists (select 1 from public.quotes where id = v_id) then
+        raise exception 'quote already exists';
+    end if;
+
+    if v_raw is not null then
+        -- Engine ≥ 1.1.0: the hash covers exactly these bytes.
+        if encode(extensions.digest(convert_to(v_raw, 'UTF8'), 'sha256'), 'hex') is distinct from p ->> 'snapshot_sha256' then
+            raise exception 'snapshot hash does not match the calculation';
+        end if;
+        v_calc := v_raw::jsonb;
+    else
+        v_calc := p -> 'calculation';
+    end if;
+
+    if jsonb_typeof(v_calc) is distinct from 'object'
+       or (v_calc ->> 'netTotalCents')::bigint   is distinct from (p ->> 'net_total_cents')::bigint
+       or (v_calc ->> 'grossTotalCents')::bigint is distinct from (p ->> 'gross_total_cents')::bigint then
+        raise exception 'totals do not match the calculation';
+    end if;
+    perform app.verify_quote_calculation(v_calc, v_version);
+
+    -- Official number <PREFIX>-<YEAR>-<00001>, gap-free per company and year.
+    -- Runs inside the item's subtransaction: a failure rolls the counter back.
+    v_year := extract(year from (now() at time zone 'Europe/Berlin'))::integer;
+    insert into public.quote_counters as c (tenant_id, year, last_seq)
+    values (t.id, v_year, 1)
+    on conflict (tenant_id, year) do update set last_seq = c.last_seq + 1
+    returning last_seq into v_seq;
+    v_number := t.quote_prefix || '-' || v_year || '-' || lpad(v_seq::text, 5, '0');
+
+    insert into public.quotes (id, tenant_id, job_id, kind, revision, supersedes_quote_id, provisional_number,
+                               final_number, issued_at, issued_by, price_book_version_id, engine_version,
+                               calculation, calculation_raw, snapshot_sha256, net_total_cents, gross_total_cents)
+    values (v_id, t.id, v_job_id, v_kind, (p ->> 'revision')::integer, v_supersede, p ->> 'provisional_number',
+            v_number, app.client_ts(p ->> 'issued_at'), v_user, v_version.id,
+            p ->> 'engine_version', v_calc, v_raw, p ->> 'snapshot_sha256',
+            (p ->> 'net_total_cents')::bigint, (p ->> 'gross_total_cents')::bigint);
+
+    if v_supersede is not null then
+        update public.quotes
+        set status = 'superseded', status_changed_at = now(), status_changed_by = v_user
+        where id = v_supersede and status in ('issued', 'sent');
+    end if;
+
+    perform app.audit(t.id, 'quote.issued', v_id, jsonb_build_object(
+        'final_number', v_number, 'provisional_number', p ->> 'provisional_number', 'kind', v_kind,
+        'price_book_version_id', v_version.id, 'engine_version', p ->> 'engine_version',
+        'snapshot_sha256', p ->> 'snapshot_sha256', 'hash_verified', v_raw is not null));
+
+    return jsonb_build_object('quote_id', v_id, 'final_number', v_number);
+end $$;
+
 -- =============================================================================
 -- Permissions: keep the whitelist model (blanket revoke, explicit grants)
 -- =============================================================================

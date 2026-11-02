@@ -77,12 +77,15 @@ private struct QuotePayload: Encodable {
     var priceBookVersionId: UUID
     var engineVersion: String
     var calculation: QuoteCalculation
+    /// The exact canonical bytes the hash was computed over (UTF-8 string).
+    var calculationJson: String
     var snapshotSha256: String
     var netTotalCents: Int
     var grossTotalCents: Int
 
     enum CodingKeys: String, CodingKey {
         case id, revision, calculation
+        case calculationJson = "calculation_json"
         case jobId = "job_id", provisionalNumber = "provisional_number", issuedAt = "issued_at"
         case priceBookVersionId = "price_book_version_id", engineVersion = "engine_version"
         case snapshotSha256 = "snapshot_sha256", netTotalCents = "net_total_cents", grossTotalCents = "gross_total_cents"
@@ -180,8 +183,10 @@ enum LocalStore {
         settings.nextProvisionalSequence += 1
 
         let revision = (job.quotes.map(\.revision).max() ?? 0) + 1
+        // Hash and payload come from the same bytes so the server can verify the hash.
+        let canonical = try calculation.canonicalJSON()
         let quote = Quote(provisionalNumber: provisional, revision: revision, calculation: calculation,
-                          snapshotSHA256: try calculation.sha256Hex(), job: job)
+                          snapshotSHA256: QuoteCalculation.sha256Hex(of: canonical), job: job)
         context.insert(quote)
         quote.pdfData = PDFGenerator.render(quote: quote, job: job, settings: settings)
 
@@ -189,6 +194,7 @@ enum LocalStore {
             id: quote.id, jobId: job.id, provisionalNumber: provisional, revision: revision,
             issuedAt: quote.issuedAt, priceBookVersionId: calculation.priceBookVersionID,
             engineVersion: calculation.engineVersion, calculation: calculation,
+            calculationJson: String(decoding: canonical, as: UTF8.self),
             snapshotSha256: quote.snapshotSHA256, netTotalCents: calculation.netTotalCents,
             grossTotalCents: calculation.grossTotalCents
         ), in: context)

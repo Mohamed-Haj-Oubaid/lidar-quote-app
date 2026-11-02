@@ -104,11 +104,15 @@ enum PDFGenerator {
             y += 20
 
             // Notes: reproducibility, machine-assisted measurement, privacy notice.
-            let notes = [
-                String(localized: "Price book “\(calculation.priceBookName)” v\(calculation.priceBookVersion) · calculation engine \(calculation.engineVersion) · integrity \(quote.snapshotSHA256.prefix(16))"),
+            var notes = [
+                String(localized: "Price book “\(calculation.priceBookName)” v\(calculation.priceBookVersion) · calculation engine \(calculation.engineVersion) · SHA-256 fingerprint of the calculation \(quote.snapshotSHA256.prefix(16))"),
                 String(localized: "Dimensions were captured with machine-assisted LiDAR measurement and checked by our staff. Final billing follows the actual measured quantities."),
                 String(localized: "Privacy notice: \(settings.privacyNoticeText)"),
             ]
+            // Only official numbers were checked by the server (unit prices, VAT, totals).
+            if !quote.isProvisional && quote.watermark == nil {
+                notes.insert(String(localized: "Unit prices, VAT and totals were checked by our server against this price book when the quote number was assigned."), at: 1)
+            }
             for note in notes {
                 y = ensureSpace(context, y: y, needed: 50, quote: quote, settings: settings)
                 y = draw(note, at: y, font: .systemFont(ofSize: 7.5), color: .darkGray) + 4

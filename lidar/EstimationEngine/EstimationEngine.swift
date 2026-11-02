@@ -65,17 +65,22 @@ nonisolated struct QuoteCalculation: Codable, Hashable {
     var vatCents: Int
     var grossTotalCents: Int
 
-    /// Canonical JSON (sorted keys) – the basis of the integrity hash.
+    /// Canonical JSON – the ONLY encoding used for both the integrity hash and the
+    /// bytes sent to the server (`calculation_json`), so the server can verify the hash.
+    /// Sorted keys, compact, "/" not escaped (since engine 1.1.0).
     func canonicalJSON() throws -> Data {
         let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys]
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         return try encoder.encode(self)
     }
 
-    /// SHA-256 of the canonical JSON, recorded on the server audit trail.
+    /// SHA-256 of the canonical JSON, verified by the server and recorded on the audit trail.
     func sha256Hex() throws -> String {
-        let digest = SHA256.hash(data: try canonicalJSON())
-        return digest.map { String(format: "%02x", $0) }.joined()
+        Self.sha256Hex(of: try canonicalJSON())
+    }
+
+    static func sha256Hex(of data: Data) -> String {
+        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
 }
 

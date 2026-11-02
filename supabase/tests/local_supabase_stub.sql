@@ -70,3 +70,7 @@ declare
 begin
     return parts[1 : array_length(parts, 1) - 1];
 end $$;
+
+-- Supabase installs extensions (pgcrypto, …) into the "extensions" schema.
+create schema if not exists extensions;
+grant usage on schema extensions to anon, authenticated, service_role;
