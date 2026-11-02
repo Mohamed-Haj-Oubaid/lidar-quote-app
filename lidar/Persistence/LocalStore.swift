@@ -116,7 +116,14 @@ enum LocalStore {
 
     private static let payloadEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        // Millisecond precision: whole seconds made two edits within one second look
+        // equally old, so last-writer-wins dropped the second one on other devices.
+        encoder.dateEncodingStrategy = .custom { date, encoder in
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            var container = encoder.singleValueContainer()
+            try container.encode(formatter.string(from: date))
+        }
         encoder.outputFormatting = [.sortedKeys]
         return encoder
     }()

@@ -13,6 +13,10 @@ struct JobDetailView: View {
     var body: some View {
         List {
             Section("Client") {
+                if let erased = job.clientDataErasedAt {
+                    Label("Client data erased \(erased.formatted(date: .abbreviated, time: .omitted))", systemImage: "person.crop.circle.badge.xmark")
+                        .foregroundStyle(.secondary)
+                }
                 LabeledContent("Name", value: job.clientName.isEmpty ? "–" : job.clientName)
                 if !job.siteAddress.isEmpty {
                     LabeledContent("Site", value: job.siteAddress)

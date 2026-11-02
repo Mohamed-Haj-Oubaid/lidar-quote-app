@@ -108,12 +108,14 @@ final class Job {
     var updatedAt: Date
     /// When the worker confirmed the end client was shown the privacy notice.
     var privacyNoticeConfirmedAt: Date?
+    /// Set when the client's personal data was erased on request (Art. 17 GDPR).
+    var clientDataErasedAt: Date?
 
     @Relationship(deleteRule: .cascade, inverse: \Survey.job) var surveys: [Survey] = []
     @Relationship(deleteRule: .cascade, inverse: \Quote.job) var quotes: [Quote] = []
 
-    init(title: String, clientName: String = "", clientEmail: String = "", clientPhone: String = "", siteAddress: String = "") {
-        self.id = UUID()
+    init(id: UUID = UUID(), title: String, clientName: String = "", clientEmail: String = "", clientPhone: String = "", siteAddress: String = "") {
+        self.id = id
         self.title = title
         self.clientName = clientName
         self.clientEmail = clientEmail
@@ -141,8 +143,8 @@ final class Survey {
     var mediaUploaded: Bool
     var job: Job?
 
-    init(roomName: String, measurement: RoomMeasurement, job: Job) {
-        self.id = UUID()
+    init(id: UUID = UUID(), roomName: String, measurement: RoomMeasurement, job: Job) {
+        self.id = id
         self.roomName = roomName
         self.capturedAt = .now
         self.updatedAt = .now
@@ -170,7 +172,7 @@ final class Survey {
 }
 
 /// An issued quote revision. Immutable once created: changes produce a new revision.
-/// Only `finalNumber` and `pdfData` are updated when the server assigns the official number.
+/// Only `finalNumber`, `pdfData`, `status` and `clientSignedAt` ever change after issue.
 @Model
 final class Quote {
     @Attribute(.unique) var id: UUID
@@ -184,9 +186,12 @@ final class Quote {
     var snapshotSHA256: String
     @Attribute(.externalStorage) var pdfData: Data?
     var job: Job?
+    /// Lifecycle from the server: issued, sent, accepted, rejected, superseded.
+    var status: String = "issued"
+    var clientSignedAt: Date?
 
-    init(provisionalNumber: String, revision: Int, calculation: QuoteCalculation, snapshotSHA256: String, job: Job) {
-        self.id = UUID()
+    init(id: UUID = UUID(), provisionalNumber: String, revision: Int, calculation: QuoteCalculation, snapshotSHA256: String, job: Job) {
+        self.id = id
         self.provisionalNumber = provisionalNumber
         self.revision = revision
         self.issuedAt = .now

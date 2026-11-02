@@ -325,11 +325,113 @@ final class SyncManager {
         var tenant: TenantDTO?
         var priceBookVersions: [PriceBookVersionDTO]
         var quoteNumbers: [QuoteNumberDTO]
+        var jobs: [JobDTO]
+        var surveys: [SurveyDTO]
+        var quotes: [QuoteDTO]
 
         enum CodingKeys: String, CodingKey {
-            case cursor, tenant
+            case cursor, tenant, jobs, surveys, quotes
             case hasMore = "has_more"
             case priceBookVersions = "price_book_versions", quoteNumbers = "quote_numbers"
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            cursor = try c.decode(Int.self, forKey: .cursor)
+            hasMore = try c.decodeIfPresent(Bool.self, forKey: .hasMore)
+            tenant = try c.decodeIfPresent(TenantDTO.self, forKey: .tenant)
+            priceBookVersions = try c.decodeIfPresent([PriceBookVersionDTO].self, forKey: .priceBookVersions) ?? []
+            quoteNumbers = try c.decodeIfPresent([QuoteNumberDTO].self, forKey: .quoteNumbers) ?? []
+            jobs = try c.decodeIfPresent([JobDTO].self, forKey: .jobs) ?? []
+            surveys = try c.decodeIfPresent([SurveyDTO].self, forKey: .surveys) ?? []
+            quotes = try c.decodeIfPresent([QuoteDTO].self, forKey: .quotes) ?? []
+        }
+    }
+
+    private struct JobDTO: Decodable {
+        var id: UUID
+        var title: String
+        var clientName: String?
+        var clientEmail: String?
+        var clientPhone: String?
+        var siteAddress: String?
+        var privacyNoticeConfirmedAt: Date?
+        var clientDataErasedAt: Date?
+        var createdAt: Date?
+        var updatedAt: Date
+        var deletedAt: Date?
+
+        enum CodingKeys: String, CodingKey {
+            case id, title
+            case clientName = "client_name", clientEmail = "client_email", clientPhone = "client_phone"
+            case siteAddress = "site_address", privacyNoticeConfirmedAt = "privacy_notice_confirmed_at"
+            case clientDataErasedAt = "client_data_erased_at", createdAt = "created_at"
+            case updatedAt = "updated_at", deletedAt = "deleted_at"
+        }
+    }
+
+    private struct SurveyDTO: Decodable {
+        var id: UUID
+        var jobID: UUID
+        var roomName: String
+        /// Nil when the stored JSON is not a valid measurement (row is then skipped).
+        var measurement: RoomMeasurement?
+        var selections: [ItemSelection]
+        var capturedAt: Date
+        var updatedAt: Date
+        var hasMedia: Bool
+        var deletedAt: Date?
+
+        enum CodingKeys: String, CodingKey {
+            case id, measurement, selections
+            case jobID = "job_id", roomName = "room_name", capturedAt = "captured_at"
+            case updatedAt = "updated_at", hasMedia = "has_media", deletedAt = "deleted_at"
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            id = try c.decode(UUID.self, forKey: .id)
+            jobID = try c.decode(UUID.self, forKey: .jobID)
+            roomName = try c.decode(String.self, forKey: .roomName)
+            measurement = try? c.decode(RoomMeasurement.self, forKey: .measurement)
+            selections = (try? c.decode([ItemSelection].self, forKey: .selections)) ?? []
+            capturedAt = try c.decode(Date.self, forKey: .capturedAt)
+            updatedAt = try c.decode(Date.self, forKey: .updatedAt)
+            hasMedia = try c.decodeIfPresent(Bool.self, forKey: .hasMedia) ?? false
+            deletedAt = try c.decodeIfPresent(Date.self, forKey: .deletedAt)
+        }
+    }
+
+    private struct QuoteDTO: Decodable {
+        var id: UUID
+        var jobID: UUID
+        var revision: Int
+        var provisionalNumber: String
+        var finalNumber: String?
+        var issuedAt: Date
+        var calculation: QuoteCalculation?
+        var snapshotSHA256: String
+        var status: String?
+        var clientSignedAt: Date?
+
+        enum CodingKeys: String, CodingKey {
+            case id, revision, calculation, status
+            case jobID = "job_id", provisionalNumber = "provisional_number", finalNumber = "final_number"
+            case issuedAt = "issued_at", snapshotSHA256 = "snapshot_sha256", clientSignedAt = "client_signed_at"
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            id = try c.decode(UUID.self, forKey: .id)
+            jobID = try c.decode(UUID.self, forKey: .jobID)
+            revision = try c.decode(Int.self, forKey: .revision)
+            provisionalNumber = try c.decode(String.self, forKey: .provisionalNumber)
+            finalNumber = try c.decodeIfPresent(String.self, forKey: .finalNumber)
+            issuedAt = try c.decode(Date.self, forKey: .issuedAt)
+            calculation = try? c.decode(QuoteCalculation.self, forKey: .calculation)
+            snapshotSHA256 = try c.decodeIfPresent(String.self, forKey: .snapshotSHA256) ?? ""
+            status = try c.decodeIfPresent(String.self, forKey: .status)
+            clientSignedAt = try c.decodeIfPresent(Date.self, forKey: .clientSignedAt)
         }
     }
 
@@ -417,6 +519,12 @@ final class SyncManager {
             }
         }
 
+        // Relationships: jobs first, then rooms and quotes. One save per page.
+        let pendingIDs = pendingEntityIDs()
+        mergeJobs(response.jobs, skipping: pendingIDs)
+        mergeSurveys(response.surveys, skipping: pendingIDs)
+        mergeQuotes(response.quotes)
+
         for number in response.quoteNumbers {
             finalize(quoteID: number.quoteID, number: number.finalNumber)
         }
@@ -424,6 +532,118 @@ final class SyncManager {
         settings.syncCursor = response.cursor
         try context.save()
         return response.hasMore ?? false
+    }
+
+    // MARK: - Merge (server → device)
+
+    /// Entities with a local change still waiting to be pushed: the local change is
+    /// newer and wins, so the server row is skipped (also prevents resurrecting deletes).
+    private func pendingEntityIDs() -> Set<UUID> {
+        let pending = (try? context.fetch(FetchDescriptor<PendingMutation>())) ?? []
+        return Set(pending.filter { !$0.isBlocked }.compactMap(\.entityID))
+    }
+
+    private func mergeJobs(_ rows: [JobDTO], skipping pending: Set<UUID>) {
+        guard !rows.isEmpty else { return }
+        var local = Dictionary(uniqueKeysWithValues: ((try? context.fetch(FetchDescriptor<Job>())) ?? []).map { ($0.id, $0) })
+        for row in rows where !pending.contains(row.id) {
+            if row.deletedAt != nil {
+                if let job = local.removeValue(forKey: row.id) {
+                    for survey in job.surveys { removeMedia(of: survey) }
+                    context.delete(job)
+                }
+                continue
+            }
+            let job: Job
+            if let existing = local[row.id] {
+                // Erasure always wins, regardless of timestamps.
+                guard row.updatedAt > existing.updatedAt || (row.clientDataErasedAt != nil && existing.clientDataErasedAt == nil) else { continue }
+                job = existing
+            } else {
+                job = Job(id: row.id, title: row.title)
+                job.createdAt = row.createdAt ?? row.updatedAt
+                context.insert(job)
+                local[row.id] = job
+            }
+            job.title = row.title
+            job.clientName = row.clientName ?? ""
+            job.clientEmail = row.clientEmail ?? ""
+            job.clientPhone = row.clientPhone ?? ""
+            job.siteAddress = row.siteAddress ?? ""
+            job.privacyNoticeConfirmedAt = row.privacyNoticeConfirmedAt ?? job.privacyNoticeConfirmedAt
+            job.clientDataErasedAt = row.clientDataErasedAt
+            job.updatedAt = row.updatedAt
+            if row.clientDataErasedAt != nil {
+                for survey in job.surveys { removeMedia(of: survey) }
+            }
+        }
+    }
+
+    private func mergeSurveys(_ rows: [SurveyDTO], skipping pending: Set<UUID>) {
+        guard !rows.isEmpty else { return }
+        let jobs = Dictionary(uniqueKeysWithValues: ((try? context.fetch(FetchDescriptor<Job>())) ?? []).map { ($0.id, $0) })
+        var local = Dictionary(uniqueKeysWithValues: ((try? context.fetch(FetchDescriptor<Survey>())) ?? []).map { ($0.id, $0) })
+        for row in rows where !pending.contains(row.id) {
+            if row.deletedAt != nil {
+                if let survey = local.removeValue(forKey: row.id) {
+                    removeMedia(of: survey)
+                    context.delete(survey)
+                }
+                continue
+            }
+            guard let measurement = row.measurement, let job = jobs[row.jobID] else { continue }
+            let survey: Survey
+            if let existing = local[row.id] {
+                guard row.updatedAt > existing.updatedAt else { continue }
+                survey = existing
+            } else {
+                survey = Survey(id: row.id, roomName: row.roomName, measurement: measurement, job: job)
+                context.insert(survey)
+                local[row.id] = survey
+            }
+            survey.roomName = row.roomName
+            survey.measurement = measurement
+            survey.selections = row.selections
+            survey.capturedAt = row.capturedAt
+            // The setters above bump updatedAt – restore the server's value last.
+            survey.updatedAt = row.updatedAt
+        }
+    }
+
+    /// Issued quotes are immutable: missing ones are inserted (with a rendered PDF),
+    /// existing ones only take the official number, status and signing date.
+    private func mergeQuotes(_ rows: [QuoteDTO]) {
+        guard !rows.isEmpty else { return }
+        let jobs = Dictionary(uniqueKeysWithValues: ((try? context.fetch(FetchDescriptor<Job>())) ?? []).map { ($0.id, $0) })
+        let local = Dictionary(uniqueKeysWithValues: ((try? context.fetch(FetchDescriptor<Quote>())) ?? []).map { ($0.id, $0) })
+        let settings = LocalStore.settings(in: context)
+        for row in rows {
+            if let quote = local[row.id] {
+                let numberChanged = row.finalNumber != nil && quote.finalNumber != row.finalNumber
+                if let number = row.finalNumber { quote.finalNumber = number }
+                if let status = row.status { quote.status = status }
+                quote.clientSignedAt = row.clientSignedAt ?? quote.clientSignedAt
+                if numberChanged, let job = quote.job {
+                    quote.pdfData = PDFGenerator.render(quote: quote, job: job, settings: settings)
+                }
+                continue
+            }
+            guard let calculation = row.calculation, let job = jobs[row.jobID] else { continue }
+            let quote = Quote(id: row.id, provisionalNumber: row.provisionalNumber, revision: row.revision,
+                              calculation: calculation, snapshotSHA256: row.snapshotSHA256, job: job)
+            quote.issuedAt = row.issuedAt
+            quote.finalNumber = row.finalNumber
+            quote.status = row.status ?? "issued"
+            quote.clientSignedAt = row.clientSignedAt
+            context.insert(quote)
+            quote.pdfData = PDFGenerator.render(quote: quote, job: job, settings: settings)
+        }
+    }
+
+    private func removeMedia(of survey: Survey) {
+        if let fileName = survey.usdzFileName, let url = try? SurveyEngine.mediaURL(for: fileName) {
+            try? FileManager.default.removeItem(at: url)
+        }
     }
 
     // MARK: - Media
