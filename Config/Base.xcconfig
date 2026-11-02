@@ -1,0 +1,11 @@
+// Base build settings for the lidar app target (committed).
+//
+// Real values live in Config/Secrets.xcconfig, which is git-ignored.
+// Create it by copying Secrets.example.xcconfig and filling in your project.
+// Without it the app builds and runs fully offline (sync stays disabled).
+
+PRODUCT_BUNDLE_IDENTIFIER = com.example.lidarquote
+SUPABASE_URL =
+SUPABASE_ANON_KEY =
+
+#include? "Secrets.xcconfig"

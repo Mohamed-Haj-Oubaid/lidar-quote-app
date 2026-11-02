@@ -3,8 +3,8 @@
 <plist version="1.0">
 <dict>
 	<key>SUPABASE_ANON_KEY</key>
-	<string>YOUR-ANON-KEY</string>
+	<string>$(SUPABASE_ANON_KEY)</string>
 	<key>SUPABASE_URL</key>
-	<string>https://YOUR-PROJECT.supabase.co</string>
+	<string>$(SUPABASE_URL)</string>
 </dict>
 </plist>

@@ -2,6 +2,7 @@ import Foundation
 import Observation
 
 /// Supabase project settings, read from Info.plist (`SUPABASE_URL`, `SUPABASE_ANON_KEY`).
+/// The plist values are filled from `Config/Secrets.xcconfig` (git-ignored) at build time.
 /// The project must live in the `eu-central-1` (Frankfurt) region. Only the public
 /// anon key ships in the app – the service-role key never does.
 struct SupabaseConfig {
@@ -9,10 +10,17 @@ struct SupabaseConfig {
     var anonKey: String
 
     static func fromBundle() -> SupabaseConfig? {
-        guard let urlString = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,
-              let key = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String,
-              let url = URL(string: urlString),
-              !urlString.contains("YOUR-PROJECT"), !key.isEmpty, !key.contains("YOUR-ANON-KEY")
+        from(url: Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,
+             key: Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String)
+    }
+
+    /// Rejects missing values, placeholders and unexpanded build variables like `$(SUPABASE_URL)`.
+    static func from(url urlString: String?, key: String?) -> SupabaseConfig? {
+        guard let urlString, let key,
+              !urlString.isEmpty, !key.isEmpty,
+              !urlString.contains("$("), !key.contains("$("),
+              !urlString.contains("YOUR-PROJECT"), !key.contains("YOUR-"),
+              let url = URL(string: urlString), url.scheme == "https", url.host != nil
         else { return nil }
         return SupabaseConfig(url: url, anonKey: key)
     }

@@ -25,7 +25,9 @@
           ],
         },
       ],
-    }, {
+    },
+    { "kind": "folder", "path": "Config" },
+    {
       "kind": "group",
       "name": "Products",
       "children": [
@@ -39,6 +41,10 @@
       "id": "000000000000000100000000",
       "product": "Products/lidar.app",
       "product-type": "application",
+      "specialized-configurations": [
+        { "name": "Debug", "file": { "anchor": "Config", "relative-path": "Base.xcconfig" } },
+        { "name": "Release", "file": { "anchor": "Config", "relative-path": "Base.xcconfig" } },
+      ],
       "build-phases": [
         "compile-sources",
         "frameworks",
@@ -47,11 +53,9 @@
       "build-settings": {
         "CODE_SIGN_STYLE": "Automatic",
         "CURRENT_PROJECT_VERSION": "1",
-        "ENABLE_APP_SANDBOX": "YES",
         "ENABLE_PREVIEWS": "YES",
-        "ENABLE_USER_SELECTED_FILES": "readonly",
         "GENERATE_INFOPLIST_FILE": "YES",
-        "INFOPLIST_FILE": "MyApp/Info.plist",
+        "INFOPLIST_FILE": "lidar/Info.plist",
         "INFOPLIST_KEY_NSCameraUsageDescription": "The camera and LiDAR scanner are used to measure rooms for your quote. No camera images are stored — only room geometry.",
         "INFOPLIST_KEY_NSFaceIDUsageDescription": "Face ID locks the app so client data stays protected if the device is lost.",
         "INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]": "YES",
@@ -64,10 +68,10 @@
         "INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]": "UIStatusBarStyleDefault",
         "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad": "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight",
         "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone": "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight",
+        "IPHONEOS_DEPLOYMENT_TARGET": "17.0",
         "LD_RUNPATH_SEARCH_PATHS": "@executable_path/Frameworks",
         "LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]": "@executable_path/../Frameworks",
         "MARKETING_VERSION": "1.0",
-        "PRODUCT_BUNDLE_IDENTIFIER": "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:rfc1034identifier)",
         "PRODUCT_NAME": "$(TARGET_NAME)",
         "REGISTER_APP_GROUPS": "YES",
         "SDKROOT": "auto",
