@@ -209,6 +209,132 @@ nonisolated struct RoomMeasurement: Codable, Hashable {
     /// Perimeter along the walls.
     var perimeter: Double { walls.reduce(0) { $0 + $1.length } }
 
+    // MARK: Plan editing
+
+    /// Corners closer than this (metres) count as connected.
+    static let joinTolerance = 0.05
+
+    /// Result of a geometry edit.
+    struct Edit {
+        var measurement: RoomMeasurement
+        /// False when the walls do not form a closed loop, so the floor area could not be
+        /// recalculated; the previous area is then kept as a manual override.
+        var floorRecalculated: Bool
+    }
+
+    /// Changes one wall's length and keeps the plan consistent:
+    /// the wall's end moves along its direction, the wall attached at that corner is
+    /// shifted by the same offset (keeping its length and direction) and the wall after
+    /// it stretches to stay connected – a 4 × 3 rectangle with one 5 m wall becomes
+    /// 5 × 3. The floor polygon is rebuilt from the walls when they form a closed loop.
+    func settingLength(_ newLength: Double, ofWall wallID: UUID) -> Edit {
+        guard let index = walls.firstIndex(where: { $0.id == wallID }),
+              newLength > 0, walls[index].length > 0 else {
+            return Edit(measurement: self, floorRecalculated: true)
+        }
+        var result = self
+        let wall = walls[index]
+        let factor = newLength / wall.length
+        let newEnd = PlanPoint(x: wall.start.x + (wall.end.x - wall.start.x) * factor,
+                               y: wall.start.y + (wall.end.y - wall.start.y) * factor)
+        let delta = PlanPoint(x: newEnd.x - wall.end.x, y: newEnd.y - wall.end.y)
+        let tolerance = Self.joinTolerance
+        func near(_ a: PlanPoint, _ b: PlanPoint) -> Bool { hypot(a.x - b.x, a.y - b.y) <= tolerance }
+        func moved(_ p: PlanPoint) -> PlanPoint { PlanPoint(x: p.x + delta.x, y: p.y + delta.y) }
+
+        result.walls[index].end = newEnd
+        for j in walls.indices where j != index {
+            let other = walls[j]
+            let atStart = near(other.start, wall.end)
+            let atEnd = near(other.end, wall.end)
+            guard atStart || atEnd else { continue }
+            let far = atStart ? other.end : other.start
+            // In a triangle the attached wall's far corner is this wall's start: just move the shared corner.
+            if near(far, wall.start) {
+                if atStart { result.walls[j].start = newEnd } else { result.walls[j].end = newEnd }
+                continue
+            }
+            // Shift the attached wall, then drag the corner of the next wall along.
+            result.walls[j].start = moved(other.start)
+            result.walls[j].end = moved(other.end)
+            for k in walls.indices where k != index && k != j {
+                if near(walls[k].start, far) { result.walls[k].start = moved(walls[k].start) }
+                if near(walls[k].end, far) { result.walls[k].end = moved(walls[k].end) }
+            }
+        }
+        // Keep openings inside their (possibly shorter) walls.
+        for o in result.openings.indices {
+            guard let id = result.openings[o].wallID, let w = result.walls.first(where: { $0.id == id }),
+                  let offset = result.openings[o].centerOffset else { continue }
+            result.openings[o].centerOffset = min(max(offset, 0), w.length)
+        }
+        result.manuallyAdjusted = true
+        return result.rebuildingFloor()
+    }
+
+    /// Rebuilds `floorPolygon` from the walls when they form a closed loop; otherwise keeps
+    /// the current floor area as a manual override.
+    func rebuildingFloor() -> Edit {
+        var result = self
+        if let loop = Self.closedLoop(of: walls) {
+            result.floorPolygon = loop
+            return Edit(measurement: result, floorRecalculated: true)
+        }
+        if result.floorAreaOverride == nil { result.floorAreaOverride = floorArea }
+        return Edit(measurement: result, floorRecalculated: false)
+    }
+
+    /// Ordered corner points when the walls connect end-to-start into one closed loop
+    /// (walls may point either way), else nil.
+    static func closedLoop(of walls: [WallSegment]) -> [PlanPoint]? {
+        guard walls.count >= 3, let first = walls.first else { return nil }
+        func near(_ a: PlanPoint, _ b: PlanPoint) -> Bool { hypot(a.x - b.x, a.y - b.y) <= joinTolerance }
+        var remaining = Array(walls.dropFirst())
+        var points = [first.start]
+        var cursor = first.end
+        while !remaining.isEmpty {
+            guard let next = remaining.firstIndex(where: { near($0.start, cursor) || near($0.end, cursor) }) else { return nil }
+            let wall = remaining.remove(at: next)
+            points.append(cursor)
+            cursor = near(wall.start, cursor) ? wall.end : wall.start
+        }
+        return near(cursor, first.start) ? points : nil
+    }
+
+    /// Width and depth when the room is an axis-aligned rectangle (as created by
+    /// `rectangle(width:depth:height:)`), else nil.
+    var rectangleSize: (width: Double, depth: Double)? {
+        guard walls.count == 4, Self.closedLoop(of: walls) != nil else { return nil }
+        let tolerance = Self.joinTolerance
+        for (index, wall) in walls.enumerated() {
+            let horizontal = abs(wall.end.y - wall.start.y) <= tolerance
+            let vertical = abs(wall.end.x - wall.start.x) <= tolerance
+            guard index.isMultiple(of: 2) ? horizontal : vertical else { return nil }
+        }
+        return (walls[0].length, walls[1].length)
+    }
+
+    /// Regenerates a rectangular room with new width and depth, keeping wall ids,
+    /// heights and openings.
+    func resizedRectangle(width: Double, depth: Double) -> RoomMeasurement {
+        guard rectangleSize != nil, width > 0, depth > 0 else { return self }
+        let origin = walls[0].start
+        let sx = walls[0].end.x >= walls[0].start.x ? 1.0 : -1.0
+        let sy = walls[1].end.y >= walls[1].start.y ? 1.0 : -1.0
+        let corners = [origin,
+                       PlanPoint(x: origin.x + sx * width, y: origin.y),
+                       PlanPoint(x: origin.x + sx * width, y: origin.y + sy * depth),
+                       PlanPoint(x: origin.x, y: origin.y + sy * depth)]
+        var result = self
+        for index in walls.indices {
+            result.walls[index].start = corners[index]
+            result.walls[index].end = corners[(index + 1) % 4]
+        }
+        result.floorPolygon = corners
+        result.manuallyAdjusted = true
+        return result
+    }
+
     /// Builds a simple rectangular room – used for manual entry on devices without LiDAR.
     static func rectangle(width: Double, depth: Double, height: Double) -> RoomMeasurement {
         let corners = [PlanPoint(x: 0, y: 0), PlanPoint(x: width, y: 0), PlanPoint(x: width, y: depth), PlanPoint(x: 0, y: depth)]

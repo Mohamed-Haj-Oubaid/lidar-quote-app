@@ -91,6 +91,7 @@ struct PlanEditorView: View {
     @State private var measurement = RoomMeasurement.empty
     @State private var selectedWallID: UUID?
     @State private var overridesFloorArea = false
+    @State private var floorWarning: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -116,6 +117,18 @@ struct PlanEditorView: View {
             .background(Color(.secondarySystemBackground))
 
             Form {
+                if survey.measurement.source == .manual, let size = measurement.rectangleSize {
+                    Section("Rectangular room") {
+                        MeterField(title: "Width", value: Binding(
+                            get: { size.width },
+                            set: { measurement = measurement.resizedRectangle(width: $0, depth: size.depth) }
+                        ))
+                        MeterField(title: "Depth", value: Binding(
+                            get: { size.depth },
+                            set: { measurement = measurement.resizedRectangle(width: size.width, depth: $0) }
+                        ))
+                    }
+                }
                 if let index = measurement.walls.firstIndex(where: { $0.id == selectedWallID }) {
                     wallEditor(index: index)
                 } else {
@@ -126,6 +139,11 @@ struct PlanEditorView: View {
                 }
 
                 Section("Floor") {
+                    if let floorWarning {
+                        Label(floorWarning, systemImage: "exclamationmark.triangle")
+                            .font(.footnote)
+                            .foregroundStyle(.orange)
+                    }
                     LabeledContent("Calculated area", value: Formatters.meters(measurement.floorArea, suffix: "m²"))
                     Toggle("Override floor area", isOn: $overridesFloorArea)
                     if overridesFloorArea {
@@ -190,15 +208,16 @@ struct PlanEditorView: View {
         }
     }
 
-    /// Changes a wall's length by moving its end point along the wall direction.
+    /// Changes a wall's length and keeps connected walls and the floor consistent.
     private func setLength(_ newLength: Double, ofWallAt index: Int) {
-        let wall = measurement.walls[index]
-        guard newLength > 0, wall.length > 0 else { return }
-        let factor = newLength / wall.length
-        measurement.walls[index].end = PlanPoint(
-            x: wall.start.x + (wall.end.x - wall.start.x) * factor,
-            y: wall.start.y + (wall.end.y - wall.start.y) * factor
-        )
+        let edit = measurement.settingLength(newLength, ofWall: measurement.walls[index].id)
+        measurement = edit.measurement
+        if edit.floorRecalculated {
+            floorWarning = nil
+        } else {
+            floorWarning = String(localized: "Floor area could not be recalculated – please enter it manually.")
+            overridesFloorArea = true
+        }
     }
 
     private func save() {
