@@ -171,29 +171,30 @@ nonisolated enum EstimationEngine {
     }
 
     /// Wall area after applying the opening deduction rule (Öffnungsabzug).
+    /// The note is built from parts and is nil when the room has no openings (1.1.0).
     static func netWallArea(_ m: RoomMeasurement, rule: OpeningRule) -> (Double, String?) {
+        guard !m.openings.isEmpty else { return (max(0, m.grossWallArea), nil) }
         let deducted: [RoomOpening]
-        let note: String?
+        var parts: [String] = []
         switch rule.mode {
         case .none:
             deducted = []
-            note = m.openings.isEmpty ? nil : String(localized: "No opening deduction")
+            parts.append(String(localized: "No opening deduction"))
         case .all:
             deducted = m.openings
-            note = m.openings.isEmpty ? nil : String(localized: "All openings deducted")
+            parts.append(String(localized: "All openings deducted"))
         case .aboveThreshold:
             deducted = m.openings.filter { $0.area > rule.thresholdM2 }
             let threshold = rule.thresholdM2.formatted(.number.precision(.fractionLength(2)))
-            note = String(localized: "Openings > \(threshold) m² deducted")
+            parts.append(String(localized: "Openings > \(threshold) m² deducted"))
         }
 
         var area = m.grossWallArea - deducted.reduce(0) { $0 + $1.area }
-        var finalNote = note
         if rule.addReveals, !deducted.isEmpty {
             area += deducted.reduce(0) { $0 + $1.revealLength * rule.revealDepthM }
-            finalNote = (note ?? "") + String(localized: ", reveals added")
+            parts.append(String(localized: "reveals added"))
         }
-        return (max(0, area), finalNote)
+        return (max(0, area), parts.joined(separator: ", "))
     }
 
     // MARK: - Integer arithmetic helpers
