@@ -21,26 +21,44 @@ final class SyncManager {
         case offline
         case notSignedIn
         case syncing
+        /// Jobs created before the first sign-in exist; the user must choose to
+        /// upload them to this company or discard them before anything is sent.
+        case needsLocalDataDecision(jobCount: Int)
         case failed(String)
+    }
+
+    /// Result of comparing the signed-in account with the data on this device.
+    enum AccountCheck: Equatable {
+        case ok
+        /// Data of a different company was on the device and has been erased.
+        case wipedForeignData
+        case needsLocalDataDecision(jobCount: Int)
     }
 
     private(set) var status: Status = .idle
     private(set) var isOnline = false
+    /// Outbox entries created by another account on this device; never pushed.
+    private(set) var foreignMutationCount = 0
 
     private let container: ModelContainer
-    private let backend: BackendClient
+    private let backend: any BackendAPI
     private let monitor = NWPathMonitor()
+    private let monitorsConnectivity: Bool
     private var isSyncing = false
 
-    init(container: ModelContainer, backend: BackendClient) {
+    /// - Parameter monitorsConnectivity: pass `false` in tests to treat the device as online.
+    init(container: ModelContainer, backend: any BackendAPI, monitorsConnectivity: Bool = true) {
         self.container = container
         self.backend = backend
+        self.monitorsConnectivity = monitorsConnectivity
+        self.isOnline = !monitorsConnectivity
     }
 
     private var context: ModelContext { container.mainContext }
 
     /// Starts watching connectivity; every transition to "online" triggers a sync.
     func start() {
+        guard monitorsConnectivity else { return }
         monitor.pathUpdateHandler = { [weak self] path in
             let online = path.status == .satisfied
             Task { @MainActor [weak self] in
@@ -64,6 +82,17 @@ final class SyncManager {
             status = .offline
             return
         }
+        // Never send anything before we know the data on this device belongs to this account.
+        do {
+            if case let .needsLocalDataDecision(count) = try checkAccount() {
+                status = .needsLocalDataDecision(jobCount: count)
+                return
+            }
+        } catch {
+            status = .failed(error.localizedDescription)
+            return
+        }
+
         isSyncing = true
         status = .syncing
         defer { isSyncing = false }
@@ -77,6 +106,81 @@ final class SyncManager {
             status = .idle
         } catch BackendError.notSignedIn {
             status = .notSignedIn
+        } catch {
+            status = .failed(error.localizedDescription)
+        }
+    }
+
+    // MARK: - Account switching
+
+    /// Compares the signed-in company with the company whose data is on the device.
+    ///
+    /// * Different company → erase the old company's data before the first sync.
+    /// * No company recorded yet but local jobs exist (created offline before the
+    ///   first sign-in) → the user must decide (`adoptLocalData` / `discardLocalData`).
+    @discardableResult
+    func checkAccount() throws -> AccountCheck {
+        guard let session = backend.session, let tenantID = session.tenantID else { return .ok }
+        let settings = LocalStore.settings(in: context)
+        if let stored = settings.tenantID {
+            guard stored != tenantID else { return .ok }
+            try LocalStore.wipeAccountData(in: context)
+            LocalStore.settings(in: context).tenantID = tenantID
+            try context.save()
+            return .wipedForeignData
+        }
+        let jobs = try context.fetchCount(FetchDescriptor<Job>())
+        if jobs > 0 { return .needsLocalDataDecision(jobCount: jobs) }
+        settings.tenantID = tenantID
+        try context.save()
+        return .ok
+    }
+
+    /// Uploads jobs created while signed out to the signed-in company.
+    func adoptLocalData() async {
+        guard let session = backend.session else { return }
+        let settings = LocalStore.settings(in: context)
+        settings.tenantID = session.tenantID
+        for mutation in (try? context.fetch(FetchDescriptor<PendingMutation>())) ?? [] where mutation.userID == nil {
+            mutation.userID = session.userID
+        }
+        try? context.save()
+        status = .idle
+        await syncNow()
+    }
+
+    /// Discards jobs created while signed out, then syncs the company's data.
+    func discardLocalData() async {
+        do {
+            try LocalStore.wipeAccountData(in: context)
+            LocalStore.settings(in: context).tenantID = backend.session?.tenantID
+            try context.save()
+            status = .idle
+        } catch {
+            status = .failed(error.localizedDescription)
+            return
+        }
+        await syncNow()
+    }
+
+    /// Signs out and removes the company's data from this device.
+    func signOut() async {
+        await backend.signOut()
+        do {
+            try LocalStore.wipeAccountData(in: context)
+        } catch {
+            status = .failed(error.localizedDescription)
+            return
+        }
+        foreignMutationCount = 0
+        status = .notSignedIn
+    }
+
+    /// Erases local company data while signed out (e.g. after the session expired).
+    func eraseLocalAccountData() {
+        do {
+            try LocalStore.wipeAccountData(in: context)
+            foreignMutationCount = 0
         } catch {
             status = .failed(error.localizedDescription)
         }
@@ -99,7 +203,19 @@ final class SyncManager {
 
     private func push() async throws {
         let descriptor = FetchDescriptor<PendingMutation>(sortBy: [SortDescriptor(\.createdAt)])
-        let pending = try context.fetch(descriptor)
+        let currentUser = backend.session?.userID
+        var pending: [PendingMutation] = []
+        var foreign = 0
+        for mutation in try context.fetch(descriptor) {
+            // Changes recorded under another account are never sent under this one.
+            if let owner = mutation.userID, owner != currentUser {
+                foreign += 1
+                mutation.lastError = String(localized: "Created by another account on this device – not sent.")
+                continue
+            }
+            pending.append(mutation)
+        }
+        foreignMutationCount = foreign
         let batchSize = 50
 
         for start in stride(from: 0, to: pending.count, by: batchSize) {

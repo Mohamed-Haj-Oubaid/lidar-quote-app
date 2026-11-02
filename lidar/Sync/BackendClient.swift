@@ -57,13 +57,29 @@ enum BackendError: LocalizedError {
     }
 }
 
+/// The backend surface `SyncManager` depends on. Extracted so sync logic can be
+/// tested against an in-memory fake instead of a live Supabase project.
+protocol BackendAPI: AnyObject {
+    var isConfigured: Bool { get }
+    var session: AuthSession? { get }
+    func rpc(_ function: String, params: [String: Any]) async throws -> Data
+    func upload(bucket: String, path: String, fileURL: URL, contentType: String) async throws
+    func signOut() async
+}
+
+extension BackendAPI {
+    var isSignedIn: Bool { session != nil }
+}
+
 /// Thin client for the Supabase REST surface the app needs: Auth (email OTP),
 /// RPC (`push_mutations`, `pull_changes`) and Storage (media uploads).
 /// The app never reads or writes tables directly – only through the RPC boundary.
 @Observable
-final class BackendClient {
+final class BackendClient: BackendAPI {
     let config: SupabaseConfig?
-    private(set) var session: AuthSession?
+    private(set) var session: AuthSession? {
+        didSet { LocalStore.actingUserID = session?.userID }
+    }
 
     private let urlSession: URLSession
     private static let keychainAccount = "session"
@@ -77,10 +93,11 @@ final class BackendClient {
         if let data = KeychainStore.load(account: Self.keychainAccount) {
             session = try? JSONDecoder().decode(AuthSession.self, from: data)
         }
+        // didSet does not run during init.
+        LocalStore.actingUserID = session?.userID
     }
 
     var isConfigured: Bool { config != nil }
-    var isSignedIn: Bool { session != nil }
 
     // MARK: - Auth (email OTP)
 
@@ -95,10 +112,16 @@ final class BackendClient {
         try storeSession(from: data)
     }
 
+    /// Ends the server session and forgets the tokens. Local data is wiped by
+    /// `SyncManager.signOut()`, which calls this.
     func signOut() async {
         if session != nil {
             _ = try? await request("auth/v1/logout", body: [String: String](), authorized: true)
         }
+        clearSession()
+    }
+
+    private func clearSession() {
         session = nil
         KeychainStore.delete(account: Self.keychainAccount)
     }
@@ -111,8 +134,10 @@ final class BackendClient {
             let data = try await request("auth/v1/token?grant_type=refresh_token", body: ["refresh_token": current.refreshToken], authorized: false)
             try storeSession(from: data)
         } catch BackendError.http(let status, _) where (400..<500).contains(status) {
-            // Refresh token revoked or expired – require a new sign-in.
-            await signOut()
+            // Refresh token revoked or expired – require a new sign-in. Local data is
+            // deliberately kept: the user decides (sign in again, or erase it in Settings).
+            // A different company signing in later is caught by SyncManager's account check.
+            clearSession()
             throw BackendError.notSignedIn
         }
     }

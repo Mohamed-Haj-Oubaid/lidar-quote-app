@@ -80,6 +80,7 @@ struct SyncStatusBadge: View {
         case .offline: String(localized: "Offline – changes are saved on this device")
         case .notSignedIn: String(localized: "Not signed in – working locally")
         case .syncing: String(localized: "Syncing…")
+        case .needsLocalDataDecision: String(localized: "Choose what to do with jobs on this device (Settings)")
         case .failed(let message): String(localized: "Sync failed: \(message)")
         }
     }
@@ -90,6 +91,7 @@ struct SyncStatusBadge: View {
         case .offline: "icloud.slash"
         case .notSignedIn: "person.crop.circle.badge.questionmark"
         case .syncing: "arrow.triangle.2.circlepath.icloud"
+        case .needsLocalDataDecision: "exclamationmark.icloud"
         case .failed: "exclamationmark.icloud"
         }
     }

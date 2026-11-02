@@ -30,15 +30,34 @@ final class TenantSettings {
     var appLockEnabled: Bool
 
     init(deviceCode: String) {
-        self.firmName = String(localized: "My Company")
+        self.firmName = Self.defaultFirmName
         self.firmAddress = ""
-        self.quotePrefix = "ANG"
+        self.quotePrefix = Self.defaultQuotePrefix
         self.mediaDeviceOnly = true
-        self.privacyNoticeText = String(localized: "To prepare your quote we measure the room with a LiDAR scanner. We store room dimensions, your name and contact details to create and manage the quote. No camera images are stored. Controller: the company named on this quote. You have the right to access, rectify and erase your data.")
+        self.privacyNoticeText = Self.defaultPrivacyNotice
         self.deviceCode = deviceCode
         self.nextProvisionalSequence = 1
         self.syncCursor = 0
         self.appLockEnabled = false
+    }
+
+    static var defaultFirmName: String { String(localized: "My Company") }
+    static let defaultQuotePrefix = "ANG"
+    static var defaultPrivacyNotice: String {
+        String(localized: "To prepare your quote we measure the room with a LiDAR scanner. We store room dimensions, your name and contact details to create and manage the quote. No camera images are stored. Controller: the company named on this quote. You have the right to access, rectify and erase your data.")
+    }
+
+    /// Forgets everything that belongs to a company account. Device identity
+    /// (`deviceCode`, provisional numbering) and the app-lock preference stay.
+    func resetAccountFields() {
+        tenantID = nil
+        syncCursor = 0
+        lastSyncAt = nil
+        firmName = Self.defaultFirmName
+        firmAddress = ""
+        quotePrefix = Self.defaultQuotePrefix
+        mediaDeviceOnly = true
+        privacyNoticeText = Self.defaultPrivacyNotice
     }
 }
 
@@ -197,12 +216,17 @@ final class PendingMutation {
     var createdAt: Date
     var attempts: Int
     var lastError: String?
+    /// Account that created the change. Never pushed under a different account,
+    /// so one company's changes can't end up in another company. Nil = created
+    /// while signed out (offline before the first sign-in).
+    var userID: UUID?
 
-    init(kind: String, payload: Data) {
+    init(kind: String, payload: Data, userID: UUID? = nil) {
         self.id = UUID()
         self.kind = kind
         self.payload = payload
         self.createdAt = .now
         self.attempts = 0
+        self.userID = userID
     }
 }

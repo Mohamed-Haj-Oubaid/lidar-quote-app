@@ -81,6 +81,9 @@ private struct QuotePayload: Encodable {
 /// Top-level payload keys are snake_case for Postgres; nested JSON (measurement,
 /// calculation) keeps its canonical form so the server copy matches the hash.
 enum LocalStore {
+    /// The signed-in account; stamped on every outbox entry. Kept in sync by `BackendClient`.
+    static var actingUserID: UUID?
+
     private static let payloadEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -164,7 +167,51 @@ enum LocalStore {
 
     private static func enqueue(_ kind: MutationKind, _ payload: some Encodable, in context: ModelContext) throws {
         let data = try payloadEncoder.encode(payload)
-        context.insert(PendingMutation(kind: kind.rawValue, payload: data))
+        context.insert(PendingMutation(kind: kind.rawValue, payload: data, userID: actingUserID))
+    }
+
+    // MARK: - Account switch
+
+    /// Removes every trace of the current company account from the device: jobs,
+    /// rooms, quotes, the outbox, downloaded price books, synced settings, media
+    /// files and shared PDFs. Called after sign-out and when a different company
+    /// signs in on this device.
+    static func wipeAccountData(in context: ModelContext) throws {
+        for job in try context.fetch(FetchDescriptor<Job>()) { context.delete(job) }
+        // Explicit as well, in case an orphan escaped the cascade.
+        for survey in try context.fetch(FetchDescriptor<Survey>()) { context.delete(survey) }
+        for quote in try context.fetch(FetchDescriptor<Quote>()) { context.delete(quote) }
+        for mutation in try context.fetch(FetchDescriptor<PendingMutation>()) { context.delete(mutation) }
+
+        let books = try context.fetch(FetchDescriptor<PriceBookVersion>())
+        for book in books where !book.isLocalSample { context.delete(book) }
+        // The sample book was retired when the firm's book arrived – bring it back.
+        let samples = books.filter(\.isLocalSample)
+        if samples.isEmpty {
+            context.insert(makeSamplePriceBook())
+        } else {
+            for sample in samples { sample.isActive = true }
+        }
+
+        settings(in: context).resetAccountFields()
+
+        let files = FileManager.default
+        if let media = try? SurveyEngine.mediaDirectory() {
+            try? files.removeItem(at: media)
+        }
+        removeSharedPDFs()
+
+        try context.save()
+    }
+
+    /// Shared quote PDFs are written to the temporary directory for the share sheet.
+    static func removeSharedPDFs() {
+        let files = FileManager.default
+        let temp = files.temporaryDirectory
+        let contents = (try? files.contentsOfDirectory(at: temp, includingPropertiesForKeys: nil)) ?? []
+        for url in contents where url.pathExtension.lowercased() == "pdf" {
+            try? files.removeItem(at: url)
+        }
     }
 
     // MARK: - First launch
@@ -174,13 +221,17 @@ enum LocalStore {
         _ = settings(in: context)
         let existing = (try? context.fetchCount(FetchDescriptor<PriceBookVersion>())) ?? 0
         if existing == 0 {
-            context.insert(PriceBookVersion(
-                id: UUID(), priceBookID: UUID(), name: String(localized: "Sample price book"), version: 0,
-                vatRateBasisPoints: 1900, publishedAt: .now, items: samplePriceItems,
-                isActive: true, isLocalSample: true
-            ))
+            context.insert(makeSamplePriceBook())
         }
         try? context.save()
+    }
+
+    private static func makeSamplePriceBook() -> PriceBookVersion {
+        PriceBookVersion(
+            id: UUID(), priceBookID: UUID(), name: String(localized: "Sample price book"), version: 0,
+            vatRateBasisPoints: 1900, publishedAt: .now, items: samplePriceItems,
+            isActive: true, isLocalSample: true
+        )
     }
 
     static let samplePriceItems: [PriceItem] = [

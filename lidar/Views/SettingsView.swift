@@ -8,6 +8,9 @@ struct SettingsView: View {
     @Environment(SyncManager.self) private var sync
     @Query private var allSettings: [TenantSettings]
     @Query(sort: \PendingMutation.createdAt) private var pending: [PendingMutation]
+    @Query private var jobs: [Job]
+    @State private var isConfirmingSignOut = false
+    @State private var isConfirmingErase = false
 
     var body: some View {
         Form {
@@ -23,10 +26,15 @@ struct SettingsView: View {
                         Task { await sync.syncNow() }
                     }
                     Button("Sign Out", role: .destructive) {
-                        Task { await backend.signOut() }
+                        isConfirmingSignOut = true
                     }
                 } else if backend.isConfigured {
                     NavigationLink("Sign In") { SignInView() }
+                    if allSettings.first?.tenantID != nil || !jobs.isEmpty {
+                        Button("Erase Company Data on This Device", role: .destructive) {
+                            isConfirmingErase = true
+                        }
+                    }
                 } else {
                     Text("Supabase is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY in the target's Info settings. The app works fully offline meanwhile.")
                         .font(.footnote)
@@ -34,6 +42,24 @@ struct SettingsView: View {
                 }
                 if let lastSync = allSettings.first?.lastSyncAt {
                     LabeledContent("Last sync", value: lastSync.formatted(date: .abbreviated, time: .shortened))
+                }
+            }
+
+            if case let .needsLocalDataDecision(count) = sync.status {
+                Section {
+                    Button("Upload to My Company") { Task { await sync.adoptLocalData() } }
+                    Button("Discard Jobs on This Device", role: .destructive) { Task { await sync.discardLocalData() } }
+                } header: {
+                    Text("Jobs created before sign-in")
+                } footer: {
+                    Text("\(count) jobs were created on this device before you signed in. Nothing is synced until you choose.")
+                }
+            }
+
+            if sync.foreignMutationCount > 0 {
+                Section {
+                    Text("\(sync.foreignMutationCount) changes were made by another account on this device and are not sent.")
+                        .foregroundStyle(.orange)
                 }
             }
 
@@ -63,6 +89,25 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog(signOutTitle, isPresented: $isConfirmingSignOut, titleVisibility: .visible) {
+            if !pending.isEmpty {
+                Button("Sync Now") { Task { await sync.syncNow() } }
+            }
+            Button(pending.isEmpty ? "Sign Out" : "Sign Out Anyway", role: .destructive) {
+                Task { await sync.signOut() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Jobs, rooms, quotes and 3D models of your company are removed from this device.")
+        }
+        .confirmationDialog("Erase company data on this device?", isPresented: $isConfirmingErase, titleVisibility: .visible) {
+            Button("Erase", role: .destructive) { sync.eraseLocalAccountData() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(pending.isEmpty
+                 ? String(localized: "All jobs, rooms and quotes on this device are deleted. Data already synced stays on the server.")
+                 : String(localized: "\(pending.count) changes have not been synced and will be lost."))
+        }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") {
@@ -71,6 +116,12 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    private var signOutTitle: String {
+        pending.isEmpty
+            ? String(localized: "Sign out?")
+            : String(localized: "\(pending.count) changes have not been synced and will be lost.")
     }
 
     /// Firm settings are editable locally before sign-in, afterwards only by Owner/Admin.
@@ -141,6 +192,8 @@ struct SignInView: View {
     @State private var codeSent = false
     @State private var isWorking = false
     @State private var errorMessage: String?
+    @State private var localJobCount = 0
+    @State private var isAskingAboutLocalData = false
 
     var body: some View {
         Form {
@@ -171,6 +224,22 @@ struct SignInView: View {
             }
         }
         .navigationTitle("Sign In")
+        .confirmationDialog("Jobs on this device", isPresented: $isAskingAboutLocalData, titleVisibility: .visible) {
+            Button("Upload to My Company") {
+                Task {
+                    await sync.adoptLocalData()
+                    dismiss()
+                }
+            }
+            Button("Discard", role: .destructive) {
+                Task {
+                    await sync.discardLocalData()
+                    dismiss()
+                }
+            }
+        } message: {
+            Text("\(localJobCount) jobs were created on this device before you signed in. Upload them to your company or discard them?")
+        }
     }
 
     private func submit() async {
@@ -180,6 +249,12 @@ struct SignInView: View {
         do {
             if codeSent {
                 try await backend.verifyOTP(email: email, code: code)
+                // Make sure no other company's data on this device is ever sent to this account.
+                if case let .needsLocalDataDecision(count) = try sync.checkAccount() {
+                    localJobCount = count
+                    isAskingAboutLocalData = true
+                    return
+                }
                 await sync.syncNow()
                 dismiss()
             } else {
