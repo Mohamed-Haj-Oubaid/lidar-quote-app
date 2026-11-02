@@ -205,17 +205,35 @@ final class BackendClient: BackendAPI {
         try Self.validate(response, data: data)
     }
 
+    /// Lists object paths under a folder of a private bucket.
+    func listObjects(bucket: String, prefix: String) async throws -> [String] {
+        try await refreshIfNeeded()
+        let body = try JSONSerialization.data(withJSONObject: ["prefix": prefix, "limit": 1000])
+        let data = try await request("storage/v1/object/list/\(bucket)", bodyData: body, authorized: true)
+        let entries = (try JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        let folder = prefix.hasSuffix("/") ? prefix : prefix + "/"
+        return entries.compactMap { $0["name"] as? String }.map { folder + $0 }
+    }
+
+    /// Deletes objects through the Storage API (never with SQL).
+    func deleteObjects(bucket: String, paths: [String]) async throws {
+        guard !paths.isEmpty else { return }
+        try await refreshIfNeeded()
+        let body = try JSONSerialization.data(withJSONObject: ["prefixes": paths])
+        _ = try await request("storage/v1/object/\(bucket)", bodyData: body, authorized: true, method: "DELETE")
+    }
+
     // MARK: - Transport
 
     private func request(_ path: String, body: [String: Any], authorized: Bool) async throws -> Data {
         try await request(path, bodyData: try JSONSerialization.data(withJSONObject: body), authorized: authorized)
     }
 
-    private func request(_ path: String, bodyData: Data, authorized: Bool) async throws -> Data {
+    private func request(_ path: String, bodyData: Data, authorized: Bool, method: String = "POST") async throws -> Data {
         guard let config else { throw BackendError.notConfigured }
         guard let url = URL(string: path, relativeTo: config.url) else { throw BackendError.notConfigured }
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        request.httpMethod = method
         request.httpBody = bodyData
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(config.anonKey, forHTTPHeaderField: "apikey")

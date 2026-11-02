@@ -9,6 +9,19 @@ enum MutationKind: String {
     case updateTenantSettings = "update_tenant_settings"
     case deleteSurvey = "delete_survey"
     case deleteJob = "delete_job"
+    case setQuoteStatus = "set_quote_status"
+}
+
+private struct QuoteStatusPayload: Encodable {
+    var quoteId: UUID
+    var jobId: UUID?
+    var status: String
+    var clientSignedAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case quoteId = "quote_id", jobId = "job_id", clientSignedAt = "client_signed_at"
+    }
 }
 
 private struct DeletePayload: Encodable {
@@ -207,6 +220,46 @@ enum LocalStore {
         ), in: context)
         try context.save()
         return quote
+    }
+
+    // MARK: - Quote lifecycle
+
+    /// Status changes allowed by the server (`m_set_quote_status`).
+    static func allowedStatusChanges(for quote: Quote) -> [String] {
+        switch quote.status {
+        case "issued": ["sent", "accepted", "rejected"]
+        case "sent": ["accepted", "rejected"]
+        default: []
+        }
+    }
+
+    /// Records sent / accepted / rejected locally and queues it – works offline.
+    static func setStatus(_ status: String, of quote: Quote, in context: ModelContext) throws {
+        guard allowedStatusChanges(for: quote).contains(status) else { return }
+        quote.status = status
+        if status == "accepted" { quote.clientSignedAt = .now }
+        try enqueue(.setQuoteStatus, QuoteStatusPayload(
+            quoteId: quote.id, jobId: quote.job?.id, status: status,
+            clientSignedAt: status == "accepted" ? quote.clientSignedAt : nil
+        ), in: context)
+        try context.save()
+    }
+
+    /// Applies an Art. 17 erasure locally (after the server erased it): client fields
+    /// cleared, media files removed. No outbox entry – the server already has it.
+    static func applyClientErasure(to job: Job, in context: ModelContext) throws {
+        job.title = String(localized: "Erased job")
+        job.clientName = ""
+        job.clientEmail = ""
+        job.clientPhone = ""
+        job.siteAddress = ""
+        job.clientDataErasedAt = .now
+        for survey in job.surveys {
+            removeMedia(of: survey)
+            survey.usdzFileName = nil
+            survey.mediaUploaded = false
+        }
+        try context.save()
     }
 
     // MARK: - Rooms

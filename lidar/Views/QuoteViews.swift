@@ -128,6 +128,7 @@ private struct SamplePreview: Identifiable {
 
 /// PDF preview with sharing through the system share sheet (Mail, AirDrop, Messages, …).
 struct QuotePreviewView: View {
+    @Environment(\.modelContext) private var modelContext
     let quote: Quote
 
     var body: some View {
@@ -154,6 +155,18 @@ struct QuotePreviewView: View {
             if let url = shareURL {
                 ToolbarItem(placement: .topBarTrailing) {
                     ShareLink(item: url)
+                }
+            }
+            let changes = LocalStore.allowedStatusChanges(for: quote)
+            if !changes.isEmpty {
+                ToolbarItem(placement: .bottomBar) {
+                    HStack {
+                        ForEach(changes, id: \.self) { status in
+                            Button(QuoteStatus.actionTitle(status)) {
+                                try? LocalStore.setStatus(status, of: quote, in: modelContext)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -186,6 +199,27 @@ struct PDFKitView: UIViewRepresentable {
     func updateUIView(_ view: PDFView, context: Context) {
         if view.document?.dataRepresentation() != data {
             view.document = PDFDocument(data: data)
+        }
+    }
+}
+
+/// Display texts for the quote lifecycle.
+enum QuoteStatus {
+    static func title(_ status: String) -> String {
+        switch status {
+        case "sent": String(localized: "Sent")
+        case "accepted": String(localized: "Accepted")
+        case "rejected": String(localized: "Rejected")
+        case "superseded": String(localized: "Superseded")
+        default: String(localized: "Issued")
+        }
+    }
+
+    static func actionTitle(_ status: String) -> String {
+        switch status {
+        case "sent": String(localized: "Mark as Sent")
+        case "accepted": String(localized: "Accepted")
+        default: String(localized: "Rejected")
         }
     }
 }

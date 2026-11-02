@@ -19,6 +19,10 @@ struct SettingsView: View {
                 FirmSettingsSection(settings: settings, canEdit: canManageFirm)
             }
 
+            if backend.session?.role?.canManageFirm == true {
+                CompanyAdminSection()
+            }
+
             Section("Account") {
                 if let session = backend.session {
                     LabeledContent("Signed in", value: session.email ?? "–")

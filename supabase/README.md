@@ -82,7 +82,24 @@ select public.admin_create_company('Malerbetrieb Muster GmbH', 'MUS', 'owner@fir
   out (`null`) until the AVV is signed – the server then refuses client data.
   Later: `select public.admin_record_avv('<company id>', 'AVV-2026-1');`
 - The owner opens the app → Settings → Sign In with exactly this e-mail → enters the code.
-- The owner invites workers from the app (`invite_member`); they sign in the same way.
+- The owner (or an admin) invites workers in the app: **Settings → Company administration →
+  Team → Invite** (`invite_member`). The worker signs in the same way.
+
+## 7a. What owners and admins do in the app
+
+All of these need an internet connection (except quote status) and are checked by the
+server on every call:
+
+| Where in the app | What | RPC | Who |
+|---|---|---|---|
+| Settings → Company administration → Team | Invite, revoke invitations, remove members | `invite_member`, `revoke_invitation`, `remove_member`, `get_team` | Owner, Admin (admins: estimators only) |
+| … → Team → role menu | Change a member's role | `change_member_role` | Owner |
+| … → Price Book | Edit and publish a new version, re-activate an older one | `publish_price_book_version`, `set_active_price_book_version` | Owner, Admin |
+| … → Export Company Data | JSON export, shared via the share sheet | `export_company_data` | Owner |
+| Job → ⋯ → Erase Client Data | GDPR Art. 17 erasure incl. 3D models in Storage | `erase_client_data` + Storage API | Owner, Admin |
+| Quote → Mark as Sent / Accepted / Rejected | Quote lifecycle (works offline, synced later) | `push_mutations` (`set_quote_status`) | everyone |
+
+Transferring ownership (`transfer_ownership`) is still done by the operator in the SQL Editor.
 - Suspend a company: `select public.admin_set_company_active('<company id>', false);`
 
 ### Delete a company (contract end, AVV / Art. 28 GDPR)

@@ -3,8 +3,12 @@ import SwiftData
 
 struct JobDetailView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(BackendClient.self) private var backend
+    @Environment(SyncManager.self) private var sync
     @Bindable var job: Job
 
+    @State private var isConfirmingErase = false
+    @State private var eraseError: String?
     @State private var isEditing = false
     @State private var isShowingPrivacyNotice = false
     @State private var isScanning = false
@@ -93,6 +97,27 @@ struct JobDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Edit") { isEditing = true }
             }
+            if backend.session?.role?.canManageFirm == true, job.clientDataErasedAt == nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu("More", systemImage: "ellipsis.circle") {
+                        Button("Erase Client Data…", systemImage: "person.crop.circle.badge.xmark", role: .destructive) {
+                            isConfirmingErase = true
+                        }
+                        .disabled(!sync.isOnline)
+                    }
+                }
+            }
+        }
+        .confirmationDialog("Erase this client's personal data?", isPresented: $isConfirmingErase, titleVisibility: .visible) {
+            Button("Erase Permanently", role: .destructive) { Task { await eraseClientData() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Name, contact details, site address and 3D models of this job are deleted on the server and all devices (GDPR Art. 17). Quotes stay for commercial record-keeping. This cannot be undone.")
+        }
+        .alert("Erasure failed", isPresented: Binding(get: { eraseError != nil }, set: { if !$0 { eraseError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(eraseError ?? "")
         }
         .sheet(isPresented: $isEditing) {
             NavigationStack { JobFormView(job: job) }
@@ -105,6 +130,16 @@ struct JobDetailView: View {
         }
         .fullScreenCover(isPresented: $isScanning) {
             ScanRoomView(job: job)
+        }
+    }
+
+    /// Server first (it is authoritative), then Storage files, then the local copy.
+    private func eraseClientData() async {
+        do {
+            try await backend.eraseClientData(jobID: job.id)
+            try LocalStore.applyClientErasure(to: job, in: modelContext)
+        } catch {
+            eraseError = error.localizedDescription
         }
     }
 
@@ -135,6 +170,15 @@ private struct RoomRow: View {
 private struct QuoteRow: View {
     let quote: Quote
 
+    private var statusColor: Color {
+        if quote.isProvisional { return .orange }
+        switch quote.status {
+        case "accepted": return .green
+        case "rejected", "superseded": return .secondary
+        default: return .blue
+        }
+    }
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
@@ -145,12 +189,16 @@ private struct QuoteRow: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            if let calculation = quote.calculation {
-                Text(Formatters.money(calculation.grossTotalCents))
-                    .font(.subheadline.monospacedDigit())
+            VStack(alignment: .trailing, spacing: 2) {
+                if let calculation = quote.calculation {
+                    Text(Formatters.money(calculation.grossTotalCents))
+                        .font(.subheadline.monospacedDigit())
+                }
+                Text(quote.isProvisional ? String(localized: "Provisional") : QuoteStatus.title(quote.status))
+                    .font(.caption2.bold())
+                    .foregroundStyle(statusColor)
             }
         }
-        .badge(quote.isProvisional ? Text("Provisional") : nil)
     }
 }
 
