@@ -128,8 +128,14 @@ final class BackendClient: BackendAPI {
 
     /// Refreshes the short-lived access token using the rotating refresh token.
     func refreshIfNeeded() async throws {
+        try await refresh(force: false)
+    }
+
+    /// - Parameter force: refresh even if the token is still valid, e.g. to pick up new
+    ///   tenant/role claims right after joining a company.
+    func refresh(force: Bool) async throws {
         guard let current = session else { throw BackendError.notSignedIn }
-        guard current.expiresAt.timeIntervalSinceNow < 60 else { return }
+        guard force || current.expiresAt.timeIntervalSinceNow < 60 else { return }
         do {
             let data = try await request("auth/v1/token?grant_type=refresh_token", body: ["refresh_token": current.refreshToken], authorized: false)
             try storeSession(from: data)

@@ -722,6 +722,57 @@ begin
     raise notice 'ok H8: retention candidates and purge marking (service_role only)';
 end $$;
 
+-- -----------------------------------------------------------------------------
+-- M1. No address probing; existing accounts join only with consent
+-- -----------------------------------------------------------------------------
+do $$
+declare
+    v_id  uuid;
+    v_inv jsonb;
+begin
+    perform test_ctx.login('55555555-5555-5555-5555-555555555555');
+    set local role authenticated;
+    -- owner@b.de belongs to company B: same answer as success, nothing created.
+    v_id := public.invite_member('owner@b.de', 'estimator');
+    assert v_id is not null, 'M1: generic success';
+    reset role;
+    assert not exists (select 1 from public.tenant_invitations where email = 'owner@b.de'
+                       and tenant_id = test_ctx.get('tenant_c')::uuid), 'M1: no invitation for a foreign member';
+    assert exists (select 1 from public.audit_log where action = 'member.invite_conflict' and entity_id = v_id), 'M1: conflict audited';
+    assert (select tenant_id from public.tenant_members where user_id = '22222222-2222-2222-2222-222222222222')
+         = test_ctx.get('tenant_b')::uuid, 'M1: foreign member untouched';
+
+    -- worker@a.de has an account (removed from A in section 8): invitation stays pending.
+    set local role authenticated;
+    perform public.invite_member('worker@a.de', 'estimator');
+    reset role;
+    assert not exists (select 1 from public.tenant_members where user_id = '44444444-4444-4444-4444-444444444444'),
+        'M1: existing account is not added without consent';
+
+    -- Nobody else can accept it.
+    perform test_ctx.login('33333333-3333-3333-3333-333333333333');
+    set local role authenticated;
+    assert public.get_my_invitation() is null, 'M1: stranger sees no invitation';
+    perform test_ctx.expect_error($q$select public.accept_invitation()$q$, 'no open invitation');
+    reset role;
+
+    -- The invited person sees the company and accepts.
+    perform test_ctx.login('44444444-4444-4444-4444-444444444444');
+    set local role authenticated;
+    v_inv := public.get_my_invitation();
+    assert v_inv ->> 'company' = 'Firma C' and v_inv ->> 'role' = 'estimator', coalesce(v_inv::text, 'null');
+    assert public.accept_invitation() = test_ctx.get('tenant_c')::uuid, 'M1: joined company C';
+    perform test_ctx.expect_error($q$select public.accept_invitation()$q$, 'already a member');
+    reset role;
+    assert (select role from public.tenant_members where user_id = '44444444-4444-4444-4444-444444444444') = 'estimator', 'M1: role from invitation';
+
+    perform set_config('request.jwt.claims', '', true);
+    set local role anon;
+    perform test_ctx.expect_error($q$select public.accept_invitation()$q$, 'permission denied');
+    reset role;
+    raise notice 'ok M1: invitations reveal nothing; existing accounts join only after accepting';
+end $$;
+
 do $$ begin raise notice 'ALL CHECKS PASSED'; end $$;
 
 rollback;

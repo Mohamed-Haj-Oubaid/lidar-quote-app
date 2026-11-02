@@ -21,6 +21,12 @@ struct TeamInvitation: Decodable, Identifiable, Hashable {
     var role: Role
 }
 
+/// An open invitation for the signed-in account (needs the person's consent).
+struct MyInvitation: Decodable {
+    var company: String
+    var role: Role
+}
+
 struct Team: Decodable {
     var members: [TeamMember]
     var invitations: [TeamInvitation]
@@ -28,6 +34,19 @@ struct Team: Decodable {
 
 extension BackendClient {
     private static let decoder: JSONDecoder = JSONDecoder()
+
+    /// The open invitation for this account, or nil.
+    func myInvitation() async throws -> MyInvitation? {
+        let data = try await rpc("get_my_invitation", params: [:])
+        if (try? JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed)) is NSNull { return nil }
+        return try? Self.decoder.decode(MyInvitation.self, from: data)
+    }
+
+    /// Joins the inviting company and refreshes the token so it carries the new claims.
+    func acceptInvitation() async throws {
+        _ = try await rpc("accept_invitation", params: [:])
+        try await refresh(force: true)
+    }
 
     func getTeam() async throws -> Team {
         try Self.decoder.decode(Team.self, from: try await rpc("get_team", params: [:]))

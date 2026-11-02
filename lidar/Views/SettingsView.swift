@@ -209,6 +209,7 @@ struct SignInView: View {
     @State private var errorMessage: String?
     @State private var localJobCount = 0
     @State private var isAskingAboutLocalData = false
+    @State private var invitation: MyInvitation?
 
     var body: some View {
         Form {
@@ -239,6 +240,24 @@ struct SignInView: View {
             }
         }
         .navigationTitle("Sign In")
+        .confirmationDialog("Join \(invitation?.company ?? "")?", isPresented: Binding(
+            get: { invitation != nil },
+            set: { if !$0 { invitation = nil } }
+        ), titleVisibility: .visible, presenting: invitation) { invitation in
+            Button("Join as \(invitation.role.title)") {
+                Task {
+                    do {
+                        try await backend.acceptInvitation()
+                        await continueAfterSignIn()
+                    } catch {
+                        errorMessage = error.localizedDescription
+                    }
+                }
+            }
+            Button("Not Now", role: .cancel) {}
+        } message: { invitation in
+            Text("\(invitation.company) invited you to work with them in this app. Jobs and quotes you create will belong to this company.")
+        }
         .confirmationDialog("Jobs on this device", isPresented: $isAskingAboutLocalData, titleVisibility: .visible) {
             Button("Upload to My Company") {
                 Task {
@@ -257,6 +276,22 @@ struct SignInView: View {
         }
     }
 
+    /// Make sure no other company's data on this device is ever sent to this account, then sync.
+    private func continueAfterSignIn() async {
+        do {
+            if case let .needsLocalDataDecision(count) = try sync.checkAccount() {
+                localJobCount = count
+                isAskingAboutLocalData = true
+                return
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+            return
+        }
+        await sync.syncNow()
+        dismiss()
+    }
+
     private func submit() async {
         isWorking = true
         defer { isWorking = false }
@@ -264,14 +299,12 @@ struct SignInView: View {
         do {
             if codeSent {
                 try await backend.verifyOTP(email: email, code: code)
-                // Make sure no other company's data on this device is ever sent to this account.
-                if case let .needsLocalDataDecision(count) = try sync.checkAccount() {
-                    localJobCount = count
-                    isAskingAboutLocalData = true
+                // An existing account without a company joins only after accepting.
+                if backend.session?.tenantID == nil, let open = try await backend.myInvitation() {
+                    invitation = open
                     return
                 }
-                await sync.syncNow()
-                dismiss()
+                await continueAfterSignIn()
             } else {
                 try await backend.sendOTP(email: email)
                 codeSent = true
