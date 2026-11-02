@@ -130,6 +130,31 @@ select * from public.admin_list_suspect_privacy_stamps();
 Check with the company and clear wrong stamps:
 `update public.jobs set privacy_notice_confirmed_at = null where id = '<job id>';`
 
+## 7b. Automatic media clean-up (retention)
+
+Each company has `media_retention_months` (default 24). 3D models of jobs that were not
+changed for that long – and of jobs whose client data was erased – are deleted daily by
+the Edge Function `supabase/functions/media-retention`. It deletes files through the
+Storage API and then marks the job (`jobs.media_purged_at`).
+
+1. Install the Supabase CLI, `supabase link --project-ref <ref>`.
+2. `supabase secrets set CRON_SECRET=<long random string>`
+3. `supabase functions deploy media-retention --no-verify-jwt`
+4. Schedule it daily – either **Integrations → Cron → Create job → HTTP request**
+   (POST `https://<ref>.supabase.co/functions/v1/media-retention`, header
+   `x-cron-secret: <secret>`), or in the SQL Editor with pg_cron + pg_net
+   (enable *pg_net* under Database → Extensions first; store the secret in Vault):
+   ```sql
+   select vault.create_secret('<long random string>', 'media_retention_cron_secret');
+   select cron.schedule('media-retention', '0 4 * * *', $$
+     select net.http_post(
+       url     := 'https://<ref>.supabase.co/functions/v1/media-retention',
+       headers := jsonb_build_object('x-cron-secret',
+                    (select decrypted_secret from vault.decrypted_secrets where name = 'media_retention_cron_secret')))
+   $$);
+   ```
+5. Check: **Edge Functions → media-retention → Logs** shows `processed: n` after a run.
+
 ## 8. Values for the app
 
 Send to the developer **only**:

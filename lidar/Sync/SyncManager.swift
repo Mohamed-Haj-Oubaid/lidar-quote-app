@@ -1,6 +1,7 @@
 import Foundation
 import Network
 import Observation
+import OSLog
 import SwiftData
 
 /// Offline-first sync between the on-device SwiftData store and Supabase.
@@ -648,19 +649,43 @@ final class SyncManager {
 
     // MARK: - Media
 
+    /// Media failures that are waiting for their next attempt.
+    private(set) var failedMediaUploads = 0
+    private let logger = Logger(subsystem: "LiDARQuote", category: "sync")
+
+    /// Uploads USDZ models one by one. A failing file is logged and retried later
+    /// with the outbox backoff – it never fails the rest of the sync.
     private func uploadMedia() async throws {
         let settings = LocalStore.settings(in: context)
         guard !settings.mediaDeviceOnly, let tenantID = settings.tenantID else { return }
         let descriptor = FetchDescriptor<Survey>(predicate: #Predicate { $0.usdzFileName != nil && !$0.mediaUploaded })
+        let now = now()
+        var failed = 0
         for survey in try context.fetch(descriptor) {
-            guard let fileName = survey.usdzFileName, let job = survey.job else { continue }
+            guard let fileName = survey.usdzFileName, let job = survey.job, job.clientDataErasedAt == nil else { continue }
+            if let next = survey.mediaNextAttemptAt, next > now {
+                failed += 1
+                continue
+            }
             let path = "\(tenantID.uuidString.lowercased())/\(job.id.uuidString.lowercased())/\(fileName)"
-            try await backend.upload(bucket: "survey-media", path: path,
-                                     fileURL: try SurveyEngine.mediaURL(for: fileName),
-                                     contentType: "model/vnd.usdz+zip")
-            survey.mediaUploaded = true
+            do {
+                try await backend.upload(bucket: "survey-media", path: path,
+                                         fileURL: try SurveyEngine.mediaURL(for: fileName),
+                                         contentType: "model/vnd.usdz+zip")
+                survey.mediaUploaded = true
+                survey.mediaUploadAttempts = 0
+                survey.mediaNextAttemptAt = nil
+            } catch BackendError.notSignedIn {
+                throw BackendError.notSignedIn
+            } catch {
+                failed += 1
+                survey.mediaUploadAttempts += 1
+                survey.mediaNextAttemptAt = now.addingTimeInterval(PendingMutation.backoff(afterAttempts: survey.mediaUploadAttempts))
+                logger.error("Media upload failed for \(fileName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
             try context.save()
         }
+        failedMediaUploads = failed
     }
 
     // MARK: - Decoding

@@ -691,6 +691,37 @@ begin
     raise notice 'ok H1b: pull_changes returns deleted rooms and jobs with deleted_at';
 end $$;
 
+-- -----------------------------------------------------------------------------
+-- H8. Media retention candidates (used by the media-retention Edge Function)
+-- -----------------------------------------------------------------------------
+do $$
+declare
+    v_old uuid := 'a8a00000-0000-0000-0000-000000000001';
+begin
+    -- Company A's job was erased in section 7; add an old untouched job of company C.
+    insert into public.jobs (id, tenant_id, title, updated_at)
+    values (v_old, test_ctx.get('tenant_c')::uuid, 'Old job', now() - interval '25 months');
+
+    assert exists (select 1 from public.admin_media_retention_candidates()
+                   where job_id = 'a0000000-0000-0000-0000-000000000001' and reason = 'erased'), 'H8: erased job is a candidate';
+    assert exists (select 1 from public.admin_media_retention_candidates()
+                   where job_id = v_old and reason = 'retention'
+                     and folder = test_ctx.get('tenant_c') || '/' || v_old), 'H8: job past retention is a candidate';
+    assert not exists (select 1 from public.admin_media_retention_candidates()
+                       where job_id = 'c1a00000-0000-0000-0000-000000000001'), 'H8: recent job is kept';
+
+    perform public.admin_mark_media_purged(v_old, 3);
+    assert not exists (select 1 from public.admin_media_retention_candidates() where job_id = v_old), 'H8: purged job not listed again';
+    assert exists (select 1 from public.audit_log where action = 'media.purged' and entity_id = v_old), 'H8: purge audited';
+
+    perform test_ctx.login('55555555-5555-5555-5555-555555555555');
+    set local role authenticated;
+    perform test_ctx.expect_error($q$select * from public.admin_media_retention_candidates()$q$, 'permission denied');
+    perform test_ctx.expect_error($q$select public.admin_mark_media_purged(gen_random_uuid())$q$, 'permission denied');
+    reset role;
+    raise notice 'ok H8: retention candidates and purge marking (service_role only)';
+end $$;
+
 do $$ begin raise notice 'ALL CHECKS PASSED'; end $$;
 
 rollback;

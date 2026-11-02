@@ -142,6 +142,9 @@ final class Survey {
     var usdzFileName: String?
     var mediaUploaded: Bool
     var job: Job?
+    /// Failed media uploads back off like the outbox instead of failing every sync.
+    var mediaUploadAttempts: Int = 0
+    var mediaNextAttemptAt: Date?
 
     init(id: UUID = UUID(), roomName: String, measurement: RoomMeasurement, job: Job) {
         self.id = id

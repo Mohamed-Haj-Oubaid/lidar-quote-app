@@ -482,6 +482,48 @@ begin
     return jsonb_build_object('quote_id', v_id, 'final_number', v_number);
 end $$;
 
+-- -----------------------------------------------------------------------------
+-- H8 · Media retention (tenants.media_retention_months was never enforced)
+--
+-- The Edge Function supabase/functions/media-retention runs daily, asks for the
+-- jobs whose media must go, deletes their Storage objects through the Storage
+-- API (never SQL) and then marks the job as purged. Both helpers are
+-- service_role only.
+-- -----------------------------------------------------------------------------
+
+alter table public.jobs add column if not exists media_purged_at timestamptz;
+
+-- Jobs whose media folder must be emptied: client data erased, or no change for
+-- longer than the company's retention period.
+create or replace function public.admin_media_retention_candidates(p_limit integer default 500)
+returns table (tenant_id uuid, job_id uuid, folder text, reason text)
+language sql stable security definer set search_path = '' as $$
+    select j.tenant_id, j.id, j.tenant_id::text || '/' || j.id::text,
+           case when j.client_data_erased_at is not null then 'erased' else 'retention' end
+    from public.jobs j
+    join public.tenants t on t.id = j.tenant_id
+    where j.media_purged_at is null
+      and (j.client_data_erased_at is not null
+           or j.updated_at < now() - make_interval(months => t.media_retention_months))
+    order by j.updated_at
+    limit greatest(coalesce(p_limit, 500), 1)
+$$;
+
+-- Called by the Edge Function after the folder was emptied.
+create or replace function public.admin_mark_media_purged(p_job_id uuid, p_files integer default 0) returns void
+language plpgsql security definer set search_path = '' as $$
+declare
+    v_tenant uuid;
+begin
+    update public.jobs set media_purged_at = now() where id = p_job_id returning tenant_id into v_tenant;
+    if v_tenant is null then
+        raise exception 'unknown job' using errcode = '22023';
+    end if;
+    update public.surveys set has_media = false, updated_at = now() where job_id = p_job_id and has_media;
+    insert into public.audit_log (tenant_id, action, entity_id, details)
+    values (v_tenant, 'media.purged', p_job_id, jsonb_build_object('files', p_files));
+end $$;
+
 -- =============================================================================
 -- Permissions: keep the whitelist model (blanket revoke, explicit grants)
 -- =============================================================================
@@ -516,6 +558,8 @@ grant execute on function public.admin_record_avv(uuid, text)                 to
 grant execute on function public.admin_set_company_active(uuid, boolean)      to service_role;
 grant execute on function public.admin_list_suspect_privacy_stamps()          to service_role;
 grant execute on function public.admin_delete_company(uuid, text)             to service_role;
+grant execute on function public.admin_media_retention_candidates(integer)    to service_role;
+grant execute on function public.admin_mark_media_purged(uuid, integer)       to service_role;
 
 -- Auth hooks: Supabase Auth only.
 grant execute on function public.hook_before_user_created(jsonb) to supabase_auth_admin;
