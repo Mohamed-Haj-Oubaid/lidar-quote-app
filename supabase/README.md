@@ -26,12 +26,16 @@ are in English because the Supabase dashboard is English.
 | 4 | `migrations/20261102000004_rpc.sql` | The API the app uses |
 | 5 | `migrations/20261102000005_storage.sql` | Private bucket for 3D models |
 | 6 | `migrations/20261102000006_maintenance.sql` | Automatic clean-up jobs |
+| 7 | `migrations/20261102000007_fixes.sql` | Review fixes: consent timestamps, deletable users/companies, retry info, quote verification, media retention |
+| 8 | `migrations/20261102000008_fixes_medium.sql` | Invitation consent, company details for quotes |
 
 Each file runs **once**. (With the Supabase CLI instead: `supabase link` + `supabase db push`.)
 
+Migration 07 needs **pgcrypto** in the `extensions` schema (installed by default on Supabase).
+
 ## 4. Verify
 
-Run `tests/security_and_flow_test.sql` in the SQL Editor. It takes about 20 seconds,
+Run `tests/security_and_flow_test.sql` in the SQL Editor. It takes about 35 seconds,
 changes nothing (everything is rolled back) and must finish **without an error**.
 It proves that anonymous users, strangers and other companies cannot read or change data.
 
@@ -160,6 +164,25 @@ Storage API and then marks the job (`jobs.media_purged_at`).
 Send to the developer **only**:
 - **Project URL** – `https://<project-ref>.supabase.co`
 - **Publishable key** – `sb_publishable_…`
+
+The developer puts them into `Config/Secrets.xcconfig` (copy of
+`Config/Secrets.example.xcconfig`; the file is git-ignored and never committed):
+
+```
+SUPABASE_URL = https:/$()/<project-ref>.supabase.co
+SUPABASE_ANON_KEY = sb_publishable_…
+PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.lidarquote
+```
+
+`//` starts a comment in xcconfig files – hence `https:/$()/`. Without this file the app
+builds and works fully offline; Settings then says that sync is not configured.
+
+## 9. Running the tests locally
+
+- **App:** open `lidar.xcodeproj`, choose an iPhone/iPad simulator, Product → Test (⌘U).
+- **Database:** on a fresh local Supabase (`supabase start`, `supabase db reset`) run
+  `tests/security_and_flow_test.sql` with `psql`; on a plain PostgreSQL 16 first run
+  `tests/local_supabase_stub.sql` (it stands in for Supabase's auth/storage schemas).
 
 ## Why the key in the app is safe
 
