@@ -13,12 +13,13 @@ struct QuoteBuilderView: View {
     @State private var issuedQuote: Quote?
     @State private var errorMessage: String?
     @State private var samplePreview: SamplePreview?
+    /// Recomputed only when the inputs change (see `inputsKey`), not on every body evaluation.
+    @State private var calculation: QuoteCalculation?
 
     /// Quotes from the local sample book can never get an official number on the server.
     private var usesSamplePriceBook: Bool { priceBooks.first?.isLocalSample == true }
 
     var body: some View {
-        let calculation = currentCalculation
         List {
             if let calculation {
                 Section("Price book") {
@@ -81,6 +82,7 @@ struct QuoteBuilderView: View {
         .navigationDestination(item: $issuedQuote) { quote in
             QuotePreviewView(quote: quote)
         }
+        .task(id: inputsKey) { calculation = currentCalculation }
         .sheet(item: $samplePreview) { preview in
             NavigationStack {
                 PDFKitView(data: preview.data)
@@ -102,6 +104,12 @@ struct QuoteBuilderView: View {
               let data = PDFGenerator.renderSamplePreview(calculation: calculation, job: job, settings: LocalStore.settings(in: modelContext))
         else { return }
         samplePreview = SamplePreview(data: data)
+    }
+
+    /// Cheap fingerprint of everything the calculation depends on.
+    private var inputsKey: String {
+        let rooms = job.sortedSurveys.map { "\($0.id)|\($0.roomName)|\($0.updatedAt.timeIntervalSinceReferenceDate)" }
+        return ([priceBooks.first?.id.uuidString ?? "-"] + rooms).joined(separator: ";")
     }
 
     private var currentCalculation: QuoteCalculation? {
@@ -130,6 +138,7 @@ private struct SamplePreview: Identifiable {
 struct QuotePreviewView: View {
     @Environment(\.modelContext) private var modelContext
     let quote: Quote
+    @State private var shareURL: URL?
 
     var body: some View {
         Group {
@@ -141,6 +150,7 @@ struct QuotePreviewView: View {
             }
         }
         .navigationTitle(quote.displayNumber)
+        .task(id: quote.pdfData) { writeShareFile() }
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .top) {
             if quote.isProvisional {
@@ -172,16 +182,27 @@ struct QuotePreviewView: View {
         }
     }
 
-    /// Writes the PDF to a temporary file named after the quote number for sharing.
-    private var shareURL: URL? {
-        guard let data = quote.pdfData else { return nil }
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(quote.displayNumber).pdf")
+    /// Writes the share file once per PDF version (not on every render).
+    private func writeShareFile() {
+        guard let data = quote.pdfData else {
+            shareURL = nil
+            return
+        }
+        LocalStore.removeSharedPDFs()
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(Self.fileName(for: quote.displayNumber)).pdf")
         do {
             try data.write(to: url, options: [.atomic, .completeFileProtection])
-            return url
+            shareURL = url
         } catch {
-            return nil
+            shareURL = nil
         }
+    }
+
+    /// Quote numbers become file names: no path separators or colons.
+    static func fileName(for number: String) -> String {
+        let cleaned = number.components(separatedBy: CharacterSet(charactersIn: "/:\\")).joined(separator: "-")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleaned.isEmpty ? "Quote" : cleaned
     }
 }
 

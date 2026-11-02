@@ -87,8 +87,14 @@ final class PriceBookVersion {
         self.isLocalSample = isLocalSample
     }
 
+    /// Decoded once; versions are immutable, so the cache never goes stale.
+    @Transient private var cachedItems: [PriceItem]?
+
     var items: [PriceItem] {
-        (try? StoreCoding.decoder.decode([PriceItem].self, from: itemsData)) ?? []
+        if let cachedItems { return cachedItems }
+        let decoded = (try? StoreCoding.decoder.decode([PriceItem].self, from: itemsData)) ?? []
+        cachedItems = decoded
+        return decoded
     }
 
     var snapshot: PriceBookSnapshot {
@@ -157,18 +163,35 @@ final class Survey {
         self.job = job
     }
 
+    // Decoding JSON on every access (several times per SwiftUI body) is wasteful:
+    // decode once and invalidate in the setters – the only writers of the blobs.
+    @Transient private var cachedMeasurement: RoomMeasurement?
+    @Transient private var cachedSelections: [ItemSelection]?
+
     var measurement: RoomMeasurement {
-        get { (try? StoreCoding.decoder.decode(RoomMeasurement.self, from: measurementData)) ?? .empty }
+        get {
+            if let cachedMeasurement { return cachedMeasurement }
+            let decoded = (try? StoreCoding.decoder.decode(RoomMeasurement.self, from: measurementData)) ?? .empty
+            cachedMeasurement = decoded
+            return decoded
+        }
         set {
             measurementData = (try? StoreCoding.encoder.encode(newValue)) ?? measurementData
+            cachedMeasurement = nil
             updatedAt = .now
         }
     }
 
     var selections: [ItemSelection] {
-        get { (try? StoreCoding.decoder.decode([ItemSelection].self, from: selectionsData)) ?? [] }
+        get {
+            if let cachedSelections { return cachedSelections }
+            let decoded = (try? StoreCoding.decoder.decode([ItemSelection].self, from: selectionsData)) ?? []
+            cachedSelections = decoded
+            return decoded
+        }
         set {
             selectionsData = (try? StoreCoding.encoder.encode(newValue)) ?? selectionsData
+            cachedSelections = nil
             updatedAt = .now
         }
     }
@@ -208,8 +231,14 @@ final class Quote {
     var displayNumber: String { finalNumber ?? provisionalNumber }
     var isProvisional: Bool { finalNumber == nil }
 
+    /// Frozen at issue time, so decoding once is enough.
+    @Transient private var cachedCalculation: QuoteCalculation?
+
     var calculation: QuoteCalculation? {
-        try? StoreCoding.decoder.decode(QuoteCalculation.self, from: calculationData)
+        if let cachedCalculation { return cachedCalculation }
+        let decoded = try? StoreCoding.decoder.decode(QuoteCalculation.self, from: calculationData)
+        cachedCalculation = decoded
+        return decoded
     }
 }
 
