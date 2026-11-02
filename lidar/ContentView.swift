@@ -62,6 +62,8 @@ struct SyncStatusBadge: View {
     @Environment(SyncManager.self) private var sync
     @Query private var pending: [PendingMutation]
 
+    private var blockedCount: Int { pending.filter(\.isBlocked).count }
+
     var body: some View {
         Button {
             Task { await sync.syncNow() }
@@ -76,6 +78,7 @@ struct SyncStatusBadge: View {
 
     private var title: String {
         switch sync.status {
+        case .idle where blockedCount > 0: String(localized: "\(blockedCount) changes need attention")
         case .idle: pending.isEmpty ? String(localized: "Synced") : String(localized: "\(pending.count) changes waiting")
         case .offline: String(localized: "Offline – changes are saved on this device")
         case .notSignedIn: String(localized: "Not signed in – working locally")
@@ -87,6 +90,7 @@ struct SyncStatusBadge: View {
 
     private var symbol: String {
         switch sync.status {
+        case .idle where blockedCount > 0: "exclamationmark.icloud"
         case .idle: pending.isEmpty ? "checkmark.icloud" : "arrow.triangle.2.circlepath.icloud"
         case .offline: "icloud.slash"
         case .notSignedIn: "person.crop.circle.badge.questionmark"

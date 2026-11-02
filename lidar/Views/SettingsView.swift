@@ -11,6 +11,7 @@ struct SettingsView: View {
     @Query private var jobs: [Job]
     @State private var isConfirmingSignOut = false
     @State private var isConfirmingErase = false
+    @State private var mutationToDiscard: PendingMutation?
 
     var body: some View {
         Form {
@@ -66,24 +67,16 @@ struct SettingsView: View {
             if !pending.isEmpty {
                 Section {
                     ForEach(pending) { mutation in
-                        VStack(alignment: .leading) {
-                            Text(mutation.kind)
-                                .font(.callout.monospaced())
-                            if let error = mutation.lastError {
-                                Text(error)
-                                    .font(.caption)
-                                    .foregroundStyle(.red)
-                            }
+                        OutboxRow(mutation: mutation) {
+                            Task { await sync.retry(mutation) }
+                        } discard: {
+                            mutationToDiscard = mutation
                         }
-                    }
-                    .onDelete { offsets in
-                        for index in offsets { modelContext.delete(pending[index]) }
-                        try? modelContext.save()
                     }
                 } header: {
                     Text("Waiting to sync (\(pending.count))")
                 } footer: {
-                    Text("Changes are kept on this device until the server accepts them. Swipe to discard a rejected change.")
+                    Text("Changes are kept on this device until the server accepts them. Changes the server refused are shown in orange.")
                 }
             }
         }
@@ -99,6 +92,15 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Jobs, rooms, quotes and 3D models of your company are removed from this device.")
+        }
+        .confirmationDialog("Discard this change?", isPresented: Binding(
+            get: { mutationToDiscard != nil },
+            set: { if !$0 { mutationToDiscard = nil } }
+        ), titleVisibility: .visible, presenting: mutationToDiscard) { mutation in
+            Button("Discard", role: .destructive) { sync.discard(mutation) }
+            Button("Cancel", role: .cancel) {}
+        } message: { mutation in
+            Text(discardMessage(for: mutation))
         }
         .confirmationDialog("Erase company data on this device?", isPresented: $isConfirmingErase, titleVisibility: .visible) {
             Button("Erase", role: .destructive) { sync.eraseLocalAccountData() }
@@ -116,6 +118,15 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    private func discardMessage(for mutation: PendingMutation) -> String {
+        let dependents = sync.dependents(of: mutation)
+        guard !dependents.isEmpty else {
+            return String(localized: "\(mutation.displayTitle) will never reach the server.")
+        }
+        let list = dependents.map(\.displayTitle).formatted(.list(type: .and))
+        return String(localized: "\(mutation.displayTitle) will never reach the server. These dependent changes are discarded too: \(list)")
     }
 
     private var signOutTitle: String {
@@ -263,6 +274,40 @@ struct SignInView: View {
             }
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+}
+
+/// One outbox entry; refused changes show the reason and Retry / Discard actions.
+private struct OutboxRow: View {
+    let mutation: PendingMutation
+    let retry: () -> Void
+    let discard: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(mutation.displayTitle)
+                .font(.callout)
+            if let reason = mutation.blockedReason {
+                Text(reason)
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                HStack {
+                    Button("Retry", action: retry)
+                    Button("Discard", role: .destructive, action: discard)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            } else if let error = mutation.lastError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let next = mutation.nextAttemptAt {
+                    Text("Next attempt \(next.formatted(.relative(presentation: .named)))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 }

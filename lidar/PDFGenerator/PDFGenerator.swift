@@ -20,12 +20,41 @@ enum Formatters {
 /// Renders an A4 quote PDF entirely on-device. The output is a pure function of
 /// the frozen calculation plus the quote number, so it can be re-rendered when
 /// the server replaces the provisional number with the official one.
+/// Everything the PDF shows about the quote itself – built from a stored `Quote`
+/// or, for the sample-price-book preview, from a calculation that is never issued.
+struct QuoteDocument {
+    var number: String
+    var revision: Int
+    var issuedAt: Date
+    var isProvisional: Bool
+    var snapshotSHA256: String
+    var calculation: QuoteCalculation
+    /// Large diagonal text on every page, e.g. "SAMPLE – NOT A VALID QUOTE".
+    var watermark: String?
+}
+
 enum PDFGenerator {
     private static let pageRect = CGRect(x: 0, y: 0, width: 595.2, height: 841.8) // A4 @ 72 dpi
     private static let margin: CGFloat = 48
 
     static func render(quote: Quote, job: Job, settings: TenantSettings) -> Data? {
         guard let calculation = quote.calculation else { return nil }
+        return render(QuoteDocument(number: quote.displayNumber, revision: quote.revision, issuedAt: quote.issuedAt,
+                                    isProvisional: quote.isProvisional, snapshotSHA256: quote.snapshotSHA256,
+                                    calculation: calculation, watermark: nil),
+                      job: job, settings: settings)
+    }
+
+    /// Watermarked preview for calculations from the local sample price book. Creates no quote.
+    static func renderSamplePreview(calculation: QuoteCalculation, job: Job, settings: TenantSettings) -> Data? {
+        render(QuoteDocument(number: String(localized: "SAMPLE"), revision: 0, issuedAt: .now, isProvisional: false,
+                             snapshotSHA256: (try? calculation.sha256Hex()) ?? "",
+                             calculation: calculation, watermark: String(localized: "SAMPLE – NOT A VALID QUOTE")),
+               job: job, settings: settings)
+    }
+
+    static func render(_ quote: QuoteDocument, job: Job, settings: TenantSettings) -> Data? {
+        let calculation = quote.calculation
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format(for: quote))
 
         return renderer.pdfData { context in
@@ -89,24 +118,27 @@ enum PDFGenerator {
 
     // MARK: - Page layout
 
-    private static func format(for quote: Quote) -> UIGraphicsPDFRendererFormat {
+    private static func format(for quote: QuoteDocument) -> UIGraphicsPDFRendererFormat {
         let format = UIGraphicsPDFRendererFormat()
         format.documentInfo = [
-            kCGPDFContextTitle as String: String(localized: "Quote \(quote.displayNumber)"),
+            kCGPDFContextTitle as String: String(localized: "Quote \(quote.number)"),
             kCGPDFContextCreator as String: "LiDAR Quote",
         ]
         return format
     }
 
-    private static func startPage(_ context: UIGraphicsPDFRendererContext, quote: Quote, settings: TenantSettings) -> CGFloat {
+    private static func startPage(_ context: UIGraphicsPDFRendererContext, quote: QuoteDocument, settings: TenantSettings) -> CGFloat {
         context.beginPage()
+        if let watermark = quote.watermark {
+            drawWatermark(watermark, in: context.cgContext)
+        }
         var y = margin
         y = draw(settings.firmName, at: y, font: .boldSystemFont(ofSize: 16))
         if !settings.firmAddress.isEmpty {
             y = draw(settings.firmAddress, at: y, font: .systemFont(ofSize: 9), color: .darkGray)
         }
         y += 16
-        y = draw(String(localized: "Quote \(quote.displayNumber)"), at: y, font: .boldSystemFont(ofSize: 18))
+        y = draw(String(localized: "Quote \(quote.number)"), at: y, font: .boldSystemFont(ofSize: 18))
         let date = quote.issuedAt.formatted(date: .long, time: .omitted)
         y = draw(String(localized: "Revision \(quote.revision) · \(date)"), at: y, font: .systemFont(ofSize: 9), color: .darkGray)
 
@@ -121,8 +153,22 @@ enum PDFGenerator {
         return y + 14
     }
 
-    private static func ensureSpace(_ context: UIGraphicsPDFRendererContext, y: CGFloat, needed: CGFloat, quote: Quote, settings: TenantSettings) -> CGFloat {
+    private static func ensureSpace(_ context: UIGraphicsPDFRendererContext, y: CGFloat, needed: CGFloat, quote: QuoteDocument, settings: TenantSettings) -> CGFloat {
         y + needed > pageRect.height - margin ? startPage(context, quote: quote, settings: settings) : y
+    }
+
+    private static func drawWatermark(_ text: String, in context: CGContext) {
+        context.saveGState()
+        context.translateBy(x: pageRect.midX, y: pageRect.midY)
+        context.rotate(by: -.pi / 4)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 46),
+            .foregroundColor: UIColor.systemRed.withAlphaComponent(0.18),
+        ]
+        let string = NSAttributedString(string: text, attributes: attributes)
+        let size = string.size()
+        string.draw(at: CGPoint(x: -size.width / 2, y: -size.height / 2))
+        context.restoreGState()
     }
 
     // MARK: - Drawing primitives

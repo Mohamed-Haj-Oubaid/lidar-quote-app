@@ -221,6 +221,105 @@ begin
     return p_tenant_id::text || '/';
 end $$;
 
+-- -----------------------------------------------------------------------------
+-- C5 · Tell the app whether a rejection is permanent
+--
+-- Business-rule violations in the m_* handlers are raised with RAISE EXCEPTION
+-- and therefore carry SQLSTATE P0001 (AVV missing, unknown job, unknown price
+-- book, id conflict, totals mismatch …): retrying never helps. Lock / serialisation
+-- conflicts and resource limits are transient. Every rejected result now has
+--   { "sqlstate": "<code>", "retryable": <bool> }
+-- so the app can block permanent failures instead of resending them forever.
+-- A short lock_timeout turns lock contention into a retryable 55P03 instead of
+-- a hanging request.
+-- -----------------------------------------------------------------------------
+
+create or replace function app.is_retryable_sqlstate(p_state text) returns boolean
+language sql immutable set search_path = '' as $$
+    select p_state in ('40001', '40P01', '55P03', '57014', 'PT429')
+        or p_state like '53%'   -- insufficient resources
+        or p_state like '08%'   -- connection exceptions
+$$;
+
+create or replace function public.push_mutations(p_batch jsonb) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+    v_user    uuid := auth.uid();
+    v_member  record;
+    t         public.tenants;
+    v_item    jsonb;
+    v_key     uuid;
+    v_kind    text;
+    p         jsonb;
+    v_stored  public.processed_mutations;
+    v_result  jsonb;
+    v_results jsonb := '[]'::jsonb;
+begin
+    v_member := app.require_member();
+    perform app.enforce_rate_limit('push', 60, interval '1 minute');
+    perform set_config('lock_timeout', '5s', true);
+
+    if jsonb_typeof(p_batch) is distinct from 'array' or jsonb_array_length(p_batch) > 100 then
+        raise exception 'batch must be an array of at most 100 mutations' using errcode = '22023';
+    end if;
+    if pg_column_size(p_batch) > 8 * 1024 * 1024 then
+        raise exception 'batch too large' using errcode = '22023';
+    end if;
+
+    select * into t from public.tenants where id = v_member.tenant_id;
+
+    for v_item in select value from jsonb_array_elements(p_batch) loop
+        begin
+            v_key  := (v_item ->> 'idempotency_key')::uuid;
+            v_kind := v_item ->> 'kind';
+            p      := v_item -> 'payload';
+            if v_key is null or jsonb_typeof(p) is distinct from 'object' then
+                raise exception 'idempotency_key and payload object are required';
+            end if;
+
+            -- Replay of an already applied mutation → return the stored result.
+            select * into v_stored from public.processed_mutations where idempotency_key = v_key;
+            if found then
+                if v_stored.tenant_id <> t.id then
+                    raise exception 'idempotency key conflict';
+                end if;
+                v_results := v_results || jsonb_build_array(v_stored.result || jsonb_build_object('status', 'duplicate'));
+                continue;
+            end if;
+
+            v_result := case v_kind
+                when 'upsert_job'             then app.m_upsert_job(t, v_user, p)
+                when 'delete_job'             then app.m_delete_job(t, v_member.role, v_user, p)
+                when 'upsert_survey'          then app.m_upsert_survey(t, v_user, p)
+                when 'delete_survey'          then app.m_delete_survey(t, v_user, p)
+                when 'issue_quote'            then app.m_issue_quote(t, v_member.role, v_user, p)
+                when 'set_quote_status'       then app.m_set_quote_status(t, v_user, p)
+                when 'update_tenant_settings' then app.m_update_tenant_settings(t, v_member.role, p)
+            end;
+            if v_result is null then
+                raise exception 'unknown mutation kind %', coalesce(v_kind, 'null');
+            end if;
+
+            v_result := jsonb_build_object('idempotency_key', v_key, 'status', 'applied') || v_result;
+            insert into public.processed_mutations (idempotency_key, tenant_id, user_id, kind, result)
+            values (v_key, t.id, v_user, v_kind, v_result);
+
+            -- Settings may have changed within this batch.
+            if v_kind = 'update_tenant_settings' then
+                select * into t from public.tenants where id = t.id;
+            end if;
+        exception when others then
+            v_result := jsonb_build_object('idempotency_key', v_item ->> 'idempotency_key',
+                                           'status', 'rejected', 'error', sqlerrm,
+                                           'sqlstate', sqlstate,
+                                           'retryable', app.is_retryable_sqlstate(sqlstate));
+        end;
+        v_results := v_results || jsonb_build_array(v_result);
+    end loop;
+
+    return v_results;
+end $$;
+
 -- =============================================================================
 -- Permissions: keep the whitelist model (blanket revoke, explicit grants)
 -- =============================================================================

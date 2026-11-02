@@ -80,6 +80,16 @@ private struct QuotePayload: Encodable {
 /// outbox entry in the same SwiftData save (offline-first, nothing lost).
 /// Top-level payload keys are snake_case for Postgres; nested JSON (measurement,
 /// calculation) keeps its canonical form so the server copy matches the hash.
+enum LocalStoreError: LocalizedError {
+    case samplePriceBook
+
+    var errorDescription: String? {
+        switch self {
+        case .samplePriceBook: String(localized: "Sample prices – sign in and sync to issue real quotes.")
+        }
+    }
+}
+
 enum LocalStore {
     /// The signed-in account; stamped on every outbox entry. Kept in sync by `BackendClient`.
     static var actingUserID: UUID?
@@ -144,6 +154,10 @@ enum LocalStore {
     /// Freezes the calculation, assigns a provisional number and renders the PDF – fully offline.
     @discardableResult
     static func issueQuote(for job: Job, calculation: QuoteCalculation, in context: ModelContext) throws -> Quote {
+        // The server rejects quotes from the device's sample book – never issue one.
+        let bookID = calculation.priceBookVersionID
+        let book = try context.fetch(FetchDescriptor<PriceBookVersion>(predicate: #Predicate { $0.id == bookID })).first
+        if book?.isLocalSample ?? true { throw LocalStoreError.samplePriceBook }
         let settings = settings(in: context)
         let provisional = String(format: "OFFLINE-TEMP-%@-%04d", settings.deviceCode, settings.nextProvisionalSequence)
         settings.nextProvisionalSequence += 1

@@ -12,6 +12,10 @@ struct QuoteBuilderView: View {
     private var priceBooks: [PriceBookVersion]
     @State private var issuedQuote: Quote?
     @State private var errorMessage: String?
+    @State private var samplePreview: SamplePreview?
+
+    /// Quotes from the local sample book can never get an official number on the server.
+    private var usesSamplePriceBook: Bool { priceBooks.first?.isLocalSample == true }
 
     var body: some View {
         let calculation = currentCalculation
@@ -54,6 +58,14 @@ struct QuoteBuilderView: View {
             } else {
                 ContentUnavailableView("No Price Book", systemImage: "list.bullet.rectangle")
             }
+            if usesSamplePriceBook {
+                Section {
+                    Label("Sample prices – sign in and sync to issue real quotes.", systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                    Button("Preview PDF", systemImage: "doc.text.magnifyingglass") { preview(calculation) }
+                        .disabled(calculation?.lines.isEmpty ?? true)
+                }
+            }
             if let errorMessage {
                 Text(errorMessage).foregroundStyle(.red)
             }
@@ -62,12 +74,33 @@ struct QuoteBuilderView: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Issue Quote") { issue(calculation) }
-                    .disabled(calculation?.lines.isEmpty ?? true)
+                    .disabled(usesSamplePriceBook || (calculation?.lines.isEmpty ?? true))
             }
         }
         .navigationDestination(item: $issuedQuote) { quote in
             QuotePreviewView(quote: quote)
         }
+        .sheet(item: $samplePreview) { preview in
+            NavigationStack {
+                PDFKitView(data: preview.data)
+                    .ignoresSafeArea(edges: .bottom)
+                    .navigationTitle("Sample Preview")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { samplePreview = nil }
+                        }
+                    }
+            }
+        }
+    }
+
+    /// Watermarked PDF only – creates no quote, no outbox entry, uses no provisional number.
+    private func preview(_ calculation: QuoteCalculation?) {
+        guard let calculation,
+              let data = PDFGenerator.renderSamplePreview(calculation: calculation, job: job, settings: LocalStore.settings(in: modelContext))
+        else { return }
+        samplePreview = SamplePreview(data: data)
     }
 
     private var currentCalculation: QuoteCalculation? {
@@ -77,7 +110,7 @@ struct QuoteBuilderView: View {
     }
 
     private func issue(_ calculation: QuoteCalculation?) {
-        guard let calculation else { return }
+        guard let calculation, !usesSamplePriceBook else { return }
         do {
             issuedQuote = try LocalStore.issueQuote(for: job, calculation: calculation, in: modelContext)
             Task { await sync.syncNow() }
@@ -85,6 +118,11 @@ struct QuoteBuilderView: View {
             errorMessage = error.localizedDescription
         }
     }
+}
+
+private struct SamplePreview: Identifiable {
+    let id = UUID()
+    let data: Data
 }
 
 /// PDF preview with sharing through the system share sheet (Mail, AirDrop, Messages, …).

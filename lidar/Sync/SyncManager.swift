@@ -194,25 +194,39 @@ final class SyncManager {
         var quoteID: UUID?
         var finalNumber: String?
         var error: String?
+        var sqlstate: String?
+        /// Missing on servers older than migration 07 – treated as transient (with backoff).
+        var retryable: Bool?
 
         enum CodingKeys: String, CodingKey {
-            case status, error
+            case status, error, sqlstate, retryable
             case idempotencyKey = "idempotency_key", quoteID = "quote_id", finalNumber = "final_number"
         }
     }
 
+    /// Clock used for backoff decisions (replaceable in tests).
+    var now: () -> Date = { .now }
+
+    static let waitingForJobReason = String(localized: "Waiting for its job, which could not be synced.")
+
     private func push() async throws {
         let descriptor = FetchDescriptor<PendingMutation>(sortBy: [SortDescriptor(\.createdAt)])
         let currentUser = backend.session?.userID
+        let all = try context.fetch(descriptor)
+        propagateBlocks(in: all)
+
         var pending: [PendingMutation] = []
         var foreign = 0
-        for mutation in try context.fetch(descriptor) {
+        let now = now()
+        for mutation in all {
             // Changes recorded under another account are never sent under this one.
             if let owner = mutation.userID, owner != currentUser {
                 foreign += 1
                 mutation.lastError = String(localized: "Created by another account on this device – not sent.")
                 continue
             }
+            if mutation.isBlocked { continue }
+            if let next = mutation.nextAttemptAt, next > now { continue }
             pending.append(mutation)
         }
         foreignMutationCount = foreign
@@ -242,10 +256,55 @@ final class SyncManager {
                 default:
                     mutation.attempts += 1
                     mutation.lastError = result.error ?? result.status
+                    if result.retryable == false {
+                        // Permanent: resending can never succeed – wait for the user.
+                        mutation.blockedReason = result.error ?? result.status
+                        mutation.nextAttemptAt = nil
+                    } else {
+                        mutation.nextAttemptAt = now.addingTimeInterval(PendingMutation.backoff(afterAttempts: mutation.attempts))
+                    }
                 }
             }
             try context.save()
         }
+        propagateBlocks(in: try context.fetch(descriptor))
+        try context.save()
+    }
+
+    /// A blocked job blocks every later change of that job (rooms, quotes, deletes):
+    /// the server would reject them as "unknown job" anyway.
+    private func propagateBlocks(in mutations: [PendingMutation]) {
+        let blockedJobs = Set(mutations.filter { $0.kind == MutationKind.upsertJob.rawValue && $0.isBlocked }.compactMap(\.jobID))
+        guard !blockedJobs.isEmpty else { return }
+        for mutation in mutations where !mutation.isBlocked && mutation.kind != MutationKind.upsertJob.rawValue {
+            if let job = mutation.jobID, blockedJobs.contains(job) {
+                mutation.blockedReason = Self.waitingForJobReason
+            }
+        }
+    }
+
+    /// Changes that are discarded together with `mutation` (its job's dependents).
+    func dependents(of mutation: PendingMutation) -> [PendingMutation] {
+        guard mutation.kind == MutationKind.upsertJob.rawValue, let job = mutation.jobID else { return [] }
+        let all = (try? context.fetch(FetchDescriptor<PendingMutation>(sortBy: [SortDescriptor(\.createdAt)]))) ?? []
+        return all.filter { $0.id != mutation.id && $0.jobID == job && $0.createdAt >= mutation.createdAt }
+    }
+
+    /// Unblocks a change (and the changes waiting for it) and syncs again.
+    func retry(_ mutation: PendingMutation) async {
+        for item in [mutation] + dependents(of: mutation) where item.isBlocked || item.nextAttemptAt != nil {
+            item.blockedReason = nil
+            item.nextAttemptAt = nil
+        }
+        try? context.save()
+        await syncNow()
+    }
+
+    /// Drops a change for good, together with the changes that depend on it.
+    func discard(_ mutation: PendingMutation) {
+        for item in dependents(of: mutation) { context.delete(item) }
+        context.delete(mutation)
+        try? context.save()
     }
 
     /// Replaces the provisional number with the official one and re-renders the PDF.

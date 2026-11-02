@@ -220,6 +220,11 @@ final class PendingMutation {
     /// so one company's changes can't end up in another company. Nil = created
     /// while signed out (offline before the first sign-in).
     var userID: UUID?
+    /// Set when the server rejected the change permanently (or a change it depends
+    /// on is blocked). Blocked entries are not resent until the user taps Retry.
+    var blockedReason: String?
+    /// Earliest time of the next attempt after a transient failure (exponential backoff).
+    var nextAttemptAt: Date?
 
     init(kind: String, payload: Data, userID: UUID? = nil) {
         self.id = UUID()
@@ -228,5 +233,51 @@ final class PendingMutation {
         self.createdAt = .now
         self.attempts = 0
         self.userID = userID
+    }
+
+    var isBlocked: Bool { blockedReason != nil }
+
+    private var payloadObject: [String: Any] {
+        (try? JSONSerialization.jsonObject(with: payload)) as? [String: Any] ?? [:]
+    }
+
+    /// Id of the entity this change writes (`id` for jobs/rooms/quotes, `quote_id` for a status change).
+    var entityID: UUID? {
+        let object = payloadObject
+        return (object["id"] as? String ?? object["quote_id"] as? String).flatMap(UUID.init(uuidString:))
+    }
+
+    /// The job this change belongs to – used to block dependents of a blocked job.
+    var jobID: UUID? {
+        let object = payloadObject
+        switch kind {
+        case "upsert_job", "delete_job":
+            return (object["id"] as? String).flatMap(UUID.init(uuidString:))
+        default:
+            return (object["job_id"] as? String).flatMap(UUID.init(uuidString:))
+        }
+    }
+
+    /// Short human-readable description for the outbox list.
+    var displayTitle: String {
+        let object = payloadObject
+        let name = object["title"] as? String ?? object["room_name"] as? String ?? object["provisional_number"] as? String
+        let what: String = switch kind {
+        case "upsert_job": String(localized: "Job")
+        case "delete_job": String(localized: "Delete job")
+        case "upsert_survey": String(localized: "Room")
+        case "delete_survey": String(localized: "Delete room")
+        case "issue_quote": String(localized: "Quote")
+        case "set_quote_status": String(localized: "Quote status")
+        case "update_tenant_settings": String(localized: "Company settings")
+        default: kind
+        }
+        guard let name, !name.isEmpty else { return what }
+        return "\(what): \(name)"
+    }
+
+    /// Exponential backoff: 2, 4, 8 … seconds, capped at one hour.
+    static func backoff(afterAttempts attempts: Int) -> TimeInterval {
+        min(pow(2, Double(min(attempts, 12))), 3600)
     }
 }

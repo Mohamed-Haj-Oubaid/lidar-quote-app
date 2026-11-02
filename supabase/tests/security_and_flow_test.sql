@@ -546,6 +546,39 @@ begin
     raise notice 'ok C2: users and companies are deletable; quotes stay immutable otherwise';
 end $$;
 
+-- -----------------------------------------------------------------------------
+-- C5. Rejections say whether a retry can help
+-- -----------------------------------------------------------------------------
+do $$
+declare
+    r jsonb;
+begin
+    perform test_ctx.login('55555555-5555-5555-5555-555555555555');
+    set local role authenticated;
+    r := public.push_mutations(jsonb_build_array(
+        -- Quote from the device's local sample price book (unknown to the server).
+        test_ctx.mutation('c5000000-0000-0000-0000-000000000001', 'issue_quote', jsonb_build_object(
+            'id', 'c5b00000-0000-0000-0000-000000000001', 'job_id', 'c1a00000-0000-0000-0000-000000000001',
+            'revision', 2, 'provisional_number', 'OFFLINE-TEMP-C-0002', 'issued_at', now(),
+            'price_book_version_id', gen_random_uuid(), 'engine_version', '1.0.0',
+            'calculation', '{"netTotalCents":0,"grossTotalCents":0,"lines":[]}'::jsonb,
+            'snapshot_sha256', repeat('c', 64), 'net_total_cents', 0, 'gross_total_cents', 0)),
+        test_ctx.mutation('c5000000-0000-0000-0000-000000000002', 'upsert_survey', jsonb_build_object(
+            'id', 'c5c00000-0000-0000-0000-000000000001', 'job_id', gen_random_uuid(),
+            'room_name', 'x', 'measurement', '{}'::jsonb, 'captured_at', now(), 'updated_at', now())),
+        test_ctx.mutation('c5000000-0000-0000-0000-000000000003', 'upsert_job',
+            jsonb_build_object('id', 'not-a-uuid', 'title', 'x', 'updated_at', now()))));
+    reset role;
+
+    assert r -> 0 ->> 'status' = 'rejected' and r -> 0 ->> 'error' like 'unknown price-book version%', r::text;
+    assert r -> 0 ->> 'sqlstate' = 'P0001' and (r -> 0 -> 'retryable') = 'false'::jsonb, r::text;
+    assert r -> 1 ->> 'sqlstate' = 'P0001' and (r -> 1 -> 'retryable') = 'false'::jsonb, r::text;
+    assert r -> 2 ? 'sqlstate' and (r -> 2 -> 'retryable') = 'false'::jsonb, r::text;
+    assert app.is_retryable_sqlstate('40001') and app.is_retryable_sqlstate('55P03')
+       and not app.is_retryable_sqlstate('P0001'), 'C5: classification';
+    raise notice 'ok C5: rejected results carry sqlstate and retryable';
+end $$;
+
 do $$ begin raise notice 'ALL CHECKS PASSED'; end $$;
 
 rollback;
