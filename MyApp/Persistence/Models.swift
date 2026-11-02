@@ -1,0 +1,208 @@
+import Foundation
+import SwiftData
+
+/// Shared JSON coders for blobs persisted inside SwiftData models.
+enum StoreCoding {
+    static let encoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return encoder
+    }()
+    static let decoder = JSONDecoder()
+}
+
+/// Per-device copy of the firm's (tenant's) configuration. Cloud-owned; pulled on sync.
+@Model
+final class TenantSettings {
+    var tenantID: UUID?
+    var firmName: String
+    var firmAddress: String
+    var quotePrefix: String
+    /// Per-firm switch: keep USDZ models and photos on the device only.
+    var mediaDeviceOnly: Bool
+    /// Tenant-editable end-client privacy notice (Art. 13 GDPR), shown before a scan and printed on quotes.
+    var privacyNoticeText: String
+    /// Random 4-character code identifying this device in provisional quote numbers.
+    var deviceCode: String
+    var nextProvisionalSequence: Int
+    var syncCursor: Int
+    var lastSyncAt: Date?
+    var appLockEnabled: Bool
+
+    init(deviceCode: String) {
+        self.firmName = String(localized: "My Company")
+        self.firmAddress = ""
+        self.quotePrefix = "ANG"
+        self.mediaDeviceOnly = true
+        self.privacyNoticeText = String(localized: "To prepare your quote we measure the room with a LiDAR scanner. We store room dimensions, your name and contact details to create and manage the quote. No camera images are stored. Controller: the company named on this quote. You have the right to access, rectify and erase your data.")
+        self.deviceCode = deviceCode
+        self.nextProvisionalSequence = 1
+        self.syncCursor = 0
+        self.appLockEnabled = false
+    }
+}
+
+/// An immutable, published version of a price book.
+@Model
+final class PriceBookVersion {
+    @Attribute(.unique) var id: UUID
+    var priceBookID: UUID
+    var name: String
+    var version: Int
+    var vatRateBasisPoints: Int
+    var publishedAt: Date
+    var itemsData: Data
+    var isActive: Bool
+    /// True for the locally seeded sample book that the server does not know about.
+    var isLocalSample: Bool
+
+    init(id: UUID, priceBookID: UUID, name: String, version: Int, vatRateBasisPoints: Int, publishedAt: Date, items: [PriceItem], isActive: Bool, isLocalSample: Bool) {
+        self.id = id
+        self.priceBookID = priceBookID
+        self.name = name
+        self.version = version
+        self.vatRateBasisPoints = vatRateBasisPoints
+        self.publishedAt = publishedAt
+        self.itemsData = (try? StoreCoding.encoder.encode(items)) ?? Data()
+        self.isActive = isActive
+        self.isLocalSample = isLocalSample
+    }
+
+    var items: [PriceItem] {
+        (try? StoreCoding.decoder.decode([PriceItem].self, from: itemsData)) ?? []
+    }
+
+    var snapshot: PriceBookSnapshot {
+        PriceBookSnapshot(versionID: id, version: version, name: name, vatRateBasisPoints: vatRateBasisPoints, items: items)
+    }
+}
+
+@Model
+final class Job {
+    @Attribute(.unique) var id: UUID
+    var title: String
+    var clientName: String
+    var clientEmail: String
+    var clientPhone: String
+    var siteAddress: String
+    var createdAt: Date
+    var updatedAt: Date
+    /// When the worker confirmed the end client was shown the privacy notice.
+    var privacyNoticeConfirmedAt: Date?
+
+    @Relationship(deleteRule: .cascade, inverse: \Survey.job) var surveys: [Survey] = []
+    @Relationship(deleteRule: .cascade, inverse: \Quote.job) var quotes: [Quote] = []
+
+    init(title: String, clientName: String = "", clientEmail: String = "", clientPhone: String = "", siteAddress: String = "") {
+        self.id = UUID()
+        self.title = title
+        self.clientName = clientName
+        self.clientEmail = clientEmail
+        self.clientPhone = clientPhone
+        self.siteAddress = siteAddress
+        self.createdAt = .now
+        self.updatedAt = .now
+    }
+
+    var sortedSurveys: [Survey] { surveys.sorted { $0.capturedAt < $1.capturedAt } }
+    var sortedQuotes: [Quote] { quotes.sorted { $0.revision > $1.revision } }
+}
+
+/// One measured room (Aufmaß) inside a job.
+@Model
+final class Survey {
+    @Attribute(.unique) var id: UUID
+    var roomName: String
+    var capturedAt: Date
+    var updatedAt: Date
+    var measurementData: Data
+    var selectionsData: Data
+    /// File name of the parametric USDZ model in the app's media directory, if any.
+    var usdzFileName: String?
+    var mediaUploaded: Bool
+    var job: Job?
+
+    init(roomName: String, measurement: RoomMeasurement, job: Job) {
+        self.id = UUID()
+        self.roomName = roomName
+        self.capturedAt = .now
+        self.updatedAt = .now
+        self.measurementData = (try? StoreCoding.encoder.encode(measurement)) ?? Data()
+        self.selectionsData = (try? StoreCoding.encoder.encode([ItemSelection]())) ?? Data()
+        self.mediaUploaded = false
+        self.job = job
+    }
+
+    var measurement: RoomMeasurement {
+        get { (try? StoreCoding.decoder.decode(RoomMeasurement.self, from: measurementData)) ?? .empty }
+        set {
+            measurementData = (try? StoreCoding.encoder.encode(newValue)) ?? measurementData
+            updatedAt = .now
+        }
+    }
+
+    var selections: [ItemSelection] {
+        get { (try? StoreCoding.decoder.decode([ItemSelection].self, from: selectionsData)) ?? [] }
+        set {
+            selectionsData = (try? StoreCoding.encoder.encode(newValue)) ?? selectionsData
+            updatedAt = .now
+        }
+    }
+}
+
+/// An issued quote revision. Immutable once created: changes produce a new revision.
+/// Only `finalNumber` and `pdfData` are updated when the server assigns the official number.
+@Model
+final class Quote {
+    @Attribute(.unique) var id: UUID
+    var provisionalNumber: String
+    var finalNumber: String?
+    var revision: Int
+    var issuedAt: Date
+    var priceBookVersionID: UUID
+    var engineVersion: String
+    var calculationData: Data
+    var snapshotSHA256: String
+    @Attribute(.externalStorage) var pdfData: Data?
+    var job: Job?
+
+    init(provisionalNumber: String, revision: Int, calculation: QuoteCalculation, snapshotSHA256: String, job: Job) {
+        self.id = UUID()
+        self.provisionalNumber = provisionalNumber
+        self.revision = revision
+        self.issuedAt = .now
+        self.priceBookVersionID = calculation.priceBookVersionID
+        self.engineVersion = calculation.engineVersion
+        self.calculationData = (try? StoreCoding.encoder.encode(calculation)) ?? Data()
+        self.snapshotSHA256 = snapshotSHA256
+        self.job = job
+    }
+
+    var displayNumber: String { finalNumber ?? provisionalNumber }
+    var isProvisional: Bool { finalNumber == nil }
+
+    var calculation: QuoteCalculation? {
+        try? StoreCoding.decoder.decode(QuoteCalculation.self, from: calculationData)
+    }
+}
+
+/// Outbox entry: a domain change waiting to be pushed to Supabase.
+/// Written in the same save as the change itself, so nothing is lost offline.
+@Model
+final class PendingMutation {
+    /// Doubles as the server-side idempotency key – replays are harmless.
+    @Attribute(.unique) var id: UUID
+    var kind: String
+    var payload: Data
+    var createdAt: Date
+    var attempts: Int
+    var lastError: String?
+
+    init(kind: String, payload: Data) {
+        self.id = UUID()
+        self.kind = kind
+        self.payload = payload
+        self.createdAt = .now
+        self.attempts = 0
+    }
+}

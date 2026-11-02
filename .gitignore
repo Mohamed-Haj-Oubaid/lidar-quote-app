@@ -1,0 +1,27 @@
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+
+# Secrets – never commit keys, passwords or local config
+*.env
+.env*
+Secrets.xcconfig
+*.p8
+*.p12
+*.mobileprovision
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
