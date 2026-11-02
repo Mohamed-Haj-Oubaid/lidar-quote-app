@@ -395,6 +395,79 @@ begin
     raise notice 'ok 9: rate limit enforced';
 end $$;
 
+-- =============================================================================
+-- Review fixes (migration 07+). Company C (owner 5555…) is fresh, so these
+-- checks are independent of the suspended company A and the rate-limited B.
+-- =============================================================================
+do $$
+declare
+    c uuid;
+begin
+    c := public.admin_create_company('Firma C', 'FC', 'owner@c.de', 'AVV-2026-1');
+    insert into test_ctx.kv values ('tenant_c', c);
+    insert into auth.users (id, email) values ('55555555-5555-5555-5555-555555555555', 'owner@c.de');
+    assert (select role from public.tenant_members where user_id = '55555555-5555-5555-5555-555555555555') = 'owner', 'owner C';
+end $$;
+
+-- -----------------------------------------------------------------------------
+-- C1. Privacy / signing timestamps are never invented
+-- -----------------------------------------------------------------------------
+do $$
+declare
+    r       jsonb;
+    v_stamp timestamptz := date_trunc('second', now() - interval '1 hour');
+    v_pbv   uuid;
+begin
+    perform test_ctx.login('55555555-5555-5555-5555-555555555555');
+    set local role authenticated;
+
+    -- 1) insert without the key → NULL (not now()).
+    r := public.push_mutations(jsonb_build_array(test_ctx.mutation('c1000000-0000-0000-0000-000000000001', 'upsert_job',
+        jsonb_build_object('id', 'c1a00000-0000-0000-0000-000000000001', 'title', 'C job', 'updated_at', now() - interval '3 seconds'))));
+    assert r -> 0 ->> 'status' = 'applied', r::text;
+    reset role;
+    assert (select privacy_notice_confirmed_at from public.jobs where id = 'c1a00000-0000-0000-0000-000000000001') is null,
+        'C1: missing key must store NULL';
+    assert not exists (select 1 from public.admin_list_suspect_privacy_stamps() where job_id = 'c1a00000-0000-0000-0000-000000000001'),
+        'C1: NULL stamp is not suspicious';
+
+    -- 2) update with the key → exactly that timestamp.
+    set local role authenticated;
+    r := public.push_mutations(jsonb_build_array(test_ctx.mutation('c1000000-0000-0000-0000-000000000002', 'upsert_job',
+        jsonb_build_object('id', 'c1a00000-0000-0000-0000-000000000001', 'title', 'C job',
+                           'privacy_notice_confirmed_at', v_stamp, 'updated_at', now() - interval '2 seconds'))));
+    assert r -> 0 ->> 'status' = 'applied', r::text;
+    reset role;
+    assert (select privacy_notice_confirmed_at from public.jobs where id = 'c1a00000-0000-0000-0000-000000000001') = v_stamp,
+        'C1: explicit timestamp stored verbatim';
+
+    -- 3) later update without the key → unchanged.
+    set local role authenticated;
+    r := public.push_mutations(jsonb_build_array(test_ctx.mutation('c1000000-0000-0000-0000-000000000003', 'upsert_job',
+        jsonb_build_object('id', 'c1a00000-0000-0000-0000-000000000001', 'title', 'C job renamed', 'updated_at', now() - interval '1 second'))));
+    assert r -> 0 ->> 'status' = 'applied', r::text;
+
+    -- Accepting a quote without client_signed_at stores NULL.
+    v_pbv := public.publish_price_book_version(null, 'Standard C', 1900, test_ctx.items());
+    insert into test_ctx.kv values ('pbv_c', v_pbv);
+    r := public.push_mutations(jsonb_build_array(
+        test_ctx.mutation('c1000000-0000-0000-0000-000000000004', 'issue_quote', jsonb_build_object(
+            'id', 'c1b00000-0000-0000-0000-000000000001', 'job_id', 'c1a00000-0000-0000-0000-000000000001',
+            'revision', 1, 'provisional_number', 'OFFLINE-TEMP-C-0001', 'issued_at', now(), 'price_book_version_id', v_pbv,
+            'engine_version', '1.0.0', 'calculation', '{"netTotalCents":0,"grossTotalCents":0,"lines":[]}'::jsonb,
+            'snapshot_sha256', repeat('c', 64), 'net_total_cents', 0, 'gross_total_cents', 0)),
+        test_ctx.mutation('c1000000-0000-0000-0000-000000000005', 'set_quote_status',
+            '{"quote_id":"c1b00000-0000-0000-0000-000000000001","status":"accepted"}'::jsonb)));
+    assert r -> 0 ->> 'status' = 'applied' and r -> 1 ->> 'status' = 'applied', r::text;
+    reset role;
+
+    assert (select privacy_notice_confirmed_at from public.jobs where id = 'c1a00000-0000-0000-0000-000000000001') = v_stamp,
+        'C1: payload without the key never overwrites the stamp';
+    assert (select client_signed_at from public.quotes where id = 'c1b00000-0000-0000-0000-000000000001') is null,
+        'C1: no invented signing time';
+    raise notice 'ok C1: privacy and signing timestamps are only stored when sent';
+end $$;
+
 do $$ begin raise notice 'ALL CHECKS PASSED'; end $$;
 
 rollback;
