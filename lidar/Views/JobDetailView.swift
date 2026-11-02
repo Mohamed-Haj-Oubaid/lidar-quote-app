@@ -107,13 +107,9 @@ struct JobDetailView: View {
     private func deleteRooms(at offsets: IndexSet) {
         let surveys = job.sortedSurveys
         for index in offsets {
-            let survey = surveys[index]
-            if let fileName = survey.usdzFileName, let url = try? SurveyEngine.mediaURL(for: fileName) {
-                try? FileManager.default.removeItem(at: url)
-            }
-            modelContext.delete(survey)
+            // Also queues delete_survey so the room disappears on the server and other devices.
+            try? LocalStore.delete(survey: surveys[index], in: modelContext)
         }
-        try? modelContext.save()
     }
 }
 

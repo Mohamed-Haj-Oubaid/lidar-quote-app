@@ -6,6 +6,7 @@ struct JobsListView: View {
     @Query(sort: \Job.updatedAt, order: .reverse) private var jobs: [Job]
     @State private var isCreatingJob = false
     @State private var isShowingSettings = false
+    @State private var jobToDelete: Job?
 
     var body: some View {
         List {
@@ -23,6 +24,26 @@ struct JobsListView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .swipeActions {
+                    Button("Delete", systemImage: "trash", role: .destructive) {
+                        jobToDelete = job
+                    }
+                }
+            }
+        }
+        .confirmationDialog("Delete this job?", isPresented: Binding(
+            get: { jobToDelete != nil },
+            set: { if !$0 { jobToDelete = nil } }
+        ), titleVisibility: .visible, presenting: jobToDelete) { job in
+            Button("Delete Job", role: .destructive) {
+                try? LocalStore.delete(job: job, in: modelContext)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { job in
+            if job.quotes.isEmpty {
+                Text("\(job.title) and its rooms are deleted on all devices.")
+            } else {
+                Text("\(job.title) and its rooms are deleted on all devices. Its \(job.quotes.count) issued quotes stay on the server for commercial record-keeping.")
             }
         }
         .overlay {

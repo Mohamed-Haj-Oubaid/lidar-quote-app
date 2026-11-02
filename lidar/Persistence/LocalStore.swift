@@ -7,6 +7,19 @@ enum MutationKind: String {
     case upsertSurvey = "upsert_survey"
     case issueQuote = "issue_quote"
     case updateTenantSettings = "update_tenant_settings"
+    case deleteSurvey = "delete_survey"
+    case deleteJob = "delete_job"
+}
+
+private struct DeletePayload: Encodable {
+    var id: UUID
+    /// Lets the outbox block the delete together with its job; ignored by the server.
+    var jobId: UUID?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case jobId = "job_id"
+    }
 }
 
 private struct TenantSettingsPayload: Encodable {
@@ -177,6 +190,59 @@ enum LocalStore {
         ), in: context)
         try context.save()
         return quote
+    }
+
+    // MARK: - Deletes
+
+    /// Deletes a room locally and tells the server (soft delete there).
+    static func delete(survey: Survey, in context: ModelContext) throws {
+        let id = survey.id
+        let jobID = survey.job?.id
+        let unsent = pendingMutations(in: context).filter { $0.kind == MutationKind.upsertSurvey.rawValue && $0.entityID == id }
+        let serverMayKnow = unsent.isEmpty || unsent.contains { $0.attempts > 0 }
+        // A room the server has never seen needs no delete – drop its pending upsert instead.
+        for mutation in unsent { context.delete(mutation) }
+        if serverMayKnow {
+            try enqueue(.deleteSurvey, DeletePayload(id: id, jobId: jobID), in: context)
+        }
+        removeMedia(of: survey)
+        context.delete(survey)
+        try context.save()
+    }
+
+    /// Deletes a job with its rooms locally and tells the server. Issued quotes stay
+    /// on the server (commercial retention); unsynced quotes are still sent first.
+    static func delete(job: Job, in context: ModelContext) throws {
+        let id = job.id
+        let related = pendingMutations(in: context).filter { $0.jobID == id }
+        let jobUpserts = related.filter { $0.kind == MutationKind.upsertJob.rawValue }
+        let pendingQuotes = related.contains { $0.kind == MutationKind.issueQuote.rawValue }
+        let serverMayKnow = jobUpserts.isEmpty || jobUpserts.contains { $0.attempts > 0 } || pendingQuotes
+
+        if serverMayKnow {
+            // Room edits are pointless now; quotes must still reach the server.
+            for mutation in related where mutation.kind == MutationKind.upsertSurvey.rawValue
+                || mutation.kind == MutationKind.deleteSurvey.rawValue {
+                context.delete(mutation)
+            }
+            try enqueue(.deleteJob, DeletePayload(id: id, jobId: id), in: context)
+        } else {
+            // The server never saw this job: nothing to send at all.
+            for mutation in related { context.delete(mutation) }
+        }
+        for survey in job.surveys { removeMedia(of: survey) }
+        context.delete(job)
+        try context.save()
+    }
+
+    private static func pendingMutations(in context: ModelContext) -> [PendingMutation] {
+        (try? context.fetch(FetchDescriptor<PendingMutation>(sortBy: [SortDescriptor(\.createdAt)]))) ?? []
+    }
+
+    private static func removeMedia(of survey: Survey) {
+        if let fileName = survey.usdzFileName, let url = try? SurveyEngine.mediaURL(for: fileName) {
+            try? FileManager.default.removeItem(at: url)
+        }
     }
 
     private static func enqueue(_ kind: MutationKind, _ payload: some Encodable, in context: ModelContext) throws {

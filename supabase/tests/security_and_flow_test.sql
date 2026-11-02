@@ -579,6 +579,53 @@ begin
     raise notice 'ok C5: rejected results carry sqlstate and retryable';
 end $$;
 
+-- -----------------------------------------------------------------------------
+-- H1. Deleted rooms and jobs reach other devices through pull_changes
+-- -----------------------------------------------------------------------------
+do $$
+declare
+    r jsonb;
+begin
+    perform test_ctx.login('55555555-5555-5555-5555-555555555555');
+    set local role authenticated;
+    r := public.push_mutations(jsonb_build_array(
+        test_ctx.mutation('41000000-0000-0000-0000-000000000001', 'upsert_job',
+            jsonb_build_object('id', '41a00000-0000-0000-0000-000000000001', 'title', 'To delete', 'updated_at', now())),
+        test_ctx.mutation('41000000-0000-0000-0000-000000000002', 'upsert_survey', jsonb_build_object(
+            'id', '41c00000-0000-0000-0000-000000000001', 'job_id', '41a00000-0000-0000-0000-000000000001',
+            'room_name', 'Flur', 'measurement', '{"walls":[]}'::jsonb, 'captured_at', now(), 'updated_at', now())),
+        test_ctx.mutation('41000000-0000-0000-0000-000000000003', 'upsert_survey', jsonb_build_object(
+            'id', '41c00000-0000-0000-0000-000000000002', 'job_id', 'c1a00000-0000-0000-0000-000000000001',
+            'room_name', 'Küche', 'measurement', '{"walls":[]}'::jsonb, 'captured_at', now(), 'updated_at', now())),
+        -- The app sends job_id along with deletes (ignored by the server).
+        test_ctx.mutation('41000000-0000-0000-0000-000000000004', 'delete_survey',
+            '{"id":"41c00000-0000-0000-0000-000000000002","job_id":"c1a00000-0000-0000-0000-000000000001"}'::jsonb),
+        test_ctx.mutation('41000000-0000-0000-0000-000000000005', 'delete_job',
+            '{"id":"41a00000-0000-0000-0000-000000000001","job_id":"41a00000-0000-0000-0000-000000000001"}'::jsonb)));
+    assert (select bool_and(e ->> 'status' = 'applied') from jsonb_array_elements(r) e), r::text;
+    reset role;
+    raise notice 'ok H1a: deletes applied; waiting 16 s for the sync settle window...';
+end $$;
+
+select pg_sleep(16);
+
+do $$
+declare
+    r jsonb;
+begin
+    perform test_ctx.login('55555555-5555-5555-5555-555555555555');
+    set local role authenticated;
+    r := public.pull_changes(0);
+    reset role;
+    assert (select e ->> 'deleted_at' from jsonb_array_elements(r -> 'surveys') e
+            where e ->> 'id' = '41c00000-0000-0000-0000-000000000002') is not null, 'H1: deleted room has deleted_at';
+    assert (select e ->> 'deleted_at' from jsonb_array_elements(r -> 'jobs') e
+            where e ->> 'id' = '41a00000-0000-0000-0000-000000000001') is not null, 'H1: deleted job has deleted_at';
+    assert (select e ->> 'deleted_at' from jsonb_array_elements(r -> 'surveys') e
+            where e ->> 'id' = '41c00000-0000-0000-0000-000000000001') is not null, 'H1: rooms of a deleted job are deleted';
+    raise notice 'ok H1b: pull_changes returns deleted rooms and jobs with deleted_at';
+end $$;
+
 do $$ begin raise notice 'ALL CHECKS PASSED'; end $$;
 
 rollback;
