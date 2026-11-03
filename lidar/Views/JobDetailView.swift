@@ -85,6 +85,8 @@ struct JobDetailView: View {
                 }
                 .disabled(job.surveys.isEmpty)
             }
+
+            WorkProofSection(job: job)
         }
         .navigationTitle(job.title)
         .navigationDestination(for: Survey.self) { survey in
@@ -92,6 +94,9 @@ struct JobDetailView: View {
         }
         .navigationDestination(for: Quote.self) { quote in
             QuotePreviewView(quote: quote)
+        }
+        .navigationDestination(for: WorkProof.self) { proof in
+            WorkProofView(proof: proof)
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

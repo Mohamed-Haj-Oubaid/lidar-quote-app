@@ -290,6 +290,7 @@ enum LocalStore {
             survey.usdzFileName = nil
             survey.mediaUploaded = false
         }
+        WorkProofStore.erasePhotos(of: job, in: context)
         try context.save()
     }
 
@@ -376,6 +377,7 @@ enum LocalStore {
             for mutation in related { context.delete(mutation) }
         }
         for survey in job.surveys { removeMedia(of: survey) }
+        for proof in job.workProofs { WorkProofStore.removeFiles(of: proof) }
         context.delete(job)
         try context.save()
     }
@@ -407,6 +409,8 @@ enum LocalStore {
         for survey in try context.fetch(FetchDescriptor<Survey>()) { context.delete(survey) }
         for quote in try context.fetch(FetchDescriptor<Quote>()) { context.delete(quote) }
         for mutation in try context.fetch(FetchDescriptor<PendingMutation>()) { context.delete(mutation) }
+        for proof in try context.fetch(FetchDescriptor<WorkProof>()) { context.delete(proof) }
+        for photo in try context.fetch(FetchDescriptor<ProofPhoto>()) { context.delete(photo) }
 
         let books = try context.fetch(FetchDescriptor<PriceBookVersion>())
         for book in books where !book.isLocalSample { context.delete(book) }
@@ -448,6 +452,13 @@ enum LocalStore {
         if existing == 0 {
             context.insert(makeSamplePriceBook())
         }
+        // Sample books seeded by older versions get newly added sample items
+        // (existing items keep their ids, so room selections stay valid).
+        for sample in (try? context.fetch(FetchDescriptor<PriceBookVersion>(predicate: #Predicate { $0.isLocalSample }))) ?? [] {
+            let codes = Set(sample.items.map(\.code))
+            let missing = samplePriceItems.filter { !codes.contains($0.code) }
+            if !missing.isEmpty { sample.replaceSampleItems(sample.items + missing) }
+        }
         try? context.save()
     }
 
@@ -468,5 +479,27 @@ enum LocalStore {
         PriceItem(id: UUID(), code: "LAI-01", name: String(localized: "Reveal plastering"), basis: .revealLength, unitPriceCents: 2400, openingRule: .noDeduction, defaultWastePercent: 0),
         PriceItem(id: UUID(), code: "TUE-01", name: String(localized: "Door frame painting"), basis: .doorCount, unitPriceCents: 6500, openingRule: .noDeduction, defaultWastePercent: 0),
         PriceItem(id: UUID(), code: "BAU-01", name: String(localized: "Site setup & covering"), basis: .fixedPiece, unitPriceCents: 9500, openingRule: .noDeduction, defaultWastePercent: 0),
+    ] + facadeSampleItems
+
+    /// Facade & insulation services (based on ecodaemm.de). The website lists no
+    /// prices: these are rough market estimates to be replaced in the price book.
+    private static let facadeSampleItems: [PriceItem] = [
+        PriceItem(id: UUID(), code: "FAS-01", name: "Gerüst stellen, vorhalten & abbauen", basis: .wallArea, unitPriceCents: 1200, openingRule: .noDeduction, defaultWastePercent: 0),
+        PriceItem(id: UUID(), code: "FAS-02", name: "Fassadenreinigung (Heißwasser-Hochdruck)", basis: .wallArea, unitPriceCents: 650, openingRule: .wallSystem, defaultWastePercent: 0),
+        PriceItem(id: UUID(), code: "FAS-03", name: "Fassadenschutz – Imprägnierung / Hydrophobierung", basis: .wallArea, unitPriceCents: 950, openingRule: .wallSystem, defaultWastePercent: 5),
+        PriceItem(id: UUID(), code: "FAS-04", name: "Fassadensanierung Altbau – Untergrund prüfen, reinigen & grundieren", basis: .wallArea, unitPriceCents: 1800, openingRule: .wallSystem, defaultWastePercent: 0),
+        PriceItem(id: UUID(), code: "FAS-05", name: "Putzschäden ausbessern (Altputz)", basis: .wallArea, unitPriceCents: 2400, openingRule: .wallSystem, defaultWastePercent: 5),
+        PriceItem(id: UUID(), code: "WDV-01", name: "Fassadendämmung Neubau – WDVS EPS 140 mm inkl. Armierung & Oberputz", basis: .wallArea, unitPriceCents: 12900, openingRule: .wallSystem, defaultWastePercent: 5),
+        PriceItem(id: UUID(), code: "WDV-02", name: "Fassadendämmung Altbau – WDVS EPS 160 mm inkl. Armierung & Oberputz", basis: .wallArea, unitPriceCents: 13900, openingRule: .wallSystem, defaultWastePercent: 5),
+        PriceItem(id: UUID(), code: "WDV-03", name: "WDVS Mineralwolle 160 mm (nichtbrennbar A1) inkl. Armierung & Oberputz", basis: .wallArea, unitPriceCents: 16900, openingRule: .wallSystem, defaultWastePercent: 5),
+        PriceItem(id: UUID(), code: "WDV-04", name: "Laibungsdämmung Fenster & Türen", basis: .revealLength, unitPriceCents: 3200, openingRule: .noDeduction, defaultWastePercent: 5),
+        PriceItem(id: UUID(), code: "WDV-05", name: "Sockeldämmung XPS/Perimeter inkl. Sockelputz", basis: .skirtingLength, unitPriceCents: 6500, openingRule: .noDeduction, defaultWastePercent: 5),
+        PriceItem(id: UUID(), code: "WDV-06", name: "Fensterbank außen (Alu) erneuern / verlängern", basis: .windowCount, unitPriceCents: 14500, openingRule: .noDeduction, defaultWastePercent: 0),
+        PriceItem(id: UUID(), code: "BRS-01", name: "Feuerschutzdämmung – Brandriegel Mineralwolle je Geschoss", basis: .skirtingLength, unitPriceCents: 3800, openingRule: .noDeduction, defaultWastePercent: 5),
+        PriceItem(id: UUID(), code: "BRS-02", name: "Feuerschutzdämmung – Mineralwolle-Dämmplatte für brandrelevante Bereiche", basis: .wallArea, unitPriceCents: 9500, openingRule: .wallSystem, defaultWastePercent: 5),
+        PriceItem(id: UUID(), code: "GES-01", name: "Fassadengestaltung – Edelputz (Scheiben-/Reibeputz)", basis: .wallArea, unitPriceCents: 3200, openingRule: .wallSystem, defaultWastePercent: 5),
+        PriceItem(id: UUID(), code: "GES-02", name: "Fassadenanstrich Silikonharzfarbe, 2-fach", basis: .wallArea, unitPriceCents: 1650, openingRule: .vobPainting, defaultWastePercent: 0),
+        PriceItem(id: UUID(), code: "GES-03", name: "Klinkerriemchen verlegen & verfugen", basis: .wallArea, unitPriceCents: 11500, openingRule: .wallSystem, defaultWastePercent: 10),
+        PriceItem(id: UUID(), code: "BER-01", name: "Energieberatung & Fördermittelantrag (BAFA/KfW)", basis: .fixedPiece, unitPriceCents: 49000, openingRule: .noDeduction, defaultWastePercent: 0),
     ]
 }

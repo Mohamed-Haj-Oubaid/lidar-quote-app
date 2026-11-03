@@ -4,7 +4,7 @@ import SwiftData
 
 /// Fresh in-memory store with the app's full schema.
 func makeTestContainer() throws -> ModelContainer {
-    let schema = Schema([TenantSettings.self, PriceBookVersion.self, Job.self, Survey.self, Quote.self, PendingMutation.self])
+    let schema = Schema([TenantSettings.self, PriceBookVersion.self, Job.self, Survey.self, Quote.self, PendingMutation.self, WorkProof.self, ProofPhoto.self])
     return try ModelContainer(for: schema, configurations: ModelConfiguration(schema: schema, isStoredInMemoryOnly: true))
 }
 

@@ -3,11 +3,14 @@ import SwiftData
 import RoomPlan
 
 /// Full-screen LiDAR scan. RoomPlan's built-in coaching guides the worker while
-/// walking the perimeter; on "Done" the result becomes a new room in the job.
+/// walking the perimeter; on "Done" the result becomes a new room in the job –
+/// or, when rescanning, replaces the geometry of an existing room.
 struct ScanRoomView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     let job: Job
+    /// Room whose measurement and 3D model are replaced (name and selections stay).
+    var replacing: Survey?
 
     private enum Phase: Equatable {
         case scanning, processing, failed(String)
@@ -66,6 +69,10 @@ struct ScanRoomView: View {
         case .failure(let error):
             phase = .failed(error.localizedDescription)
         case .success(let room):
+            if let survey = replacing {
+                rescan(survey, with: room)
+                return
+            }
             // Re-check: another room may have been added since the scan started.
             let name = LocalStore.isRoomName(roomName, takenIn: job) ? LocalStore.nextRoomName(for: job) : roomName
             let survey = Survey(roomName: name, measurement: SurveyEngine.measurement(from: room), job: job)
@@ -79,6 +86,22 @@ struct ScanRoomView: View {
             } catch {
                 phase = .failed(error.localizedDescription)
             }
+        }
+    }
+
+    private func rescan(_ survey: Survey, with room: CapturedRoom) {
+        survey.measurement = SurveyEngine.measurement(from: room)
+        survey.capturedAt = .now
+        survey.usdzFileName = try? SurveyEngine.storeModel(room, surveyID: survey.id)
+        // The new model must be uploaded again (if the firm allows uploads).
+        survey.mediaUploaded = false
+        survey.mediaUploadAttempts = 0
+        survey.mediaNextAttemptAt = nil
+        do {
+            try LocalStore.save(survey: survey, in: modelContext)
+            dismiss()
+        } catch {
+            phase = .failed(error.localizedDescription)
         }
     }
 }

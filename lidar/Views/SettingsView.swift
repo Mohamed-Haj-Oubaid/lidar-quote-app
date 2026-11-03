@@ -182,6 +182,16 @@ private struct FirmSettingsSection: View {
         .disabled(!canEdit)
 
         Section {
+            NavigationLink {
+                PDFDesignView(settings: settings, canEdit: canEdit)
+            } label: {
+                Label("PDF Design", systemImage: "paintpalette")
+            }
+        } footer: {
+            Text("Logo, colours and layout of your quotes and work reports.")
+        }
+
+        Section {
             Toggle("Keep 3D models & photos on device only", isOn: $settings.mediaDeviceOnly)
                 .disabled(!canEdit)
             Toggle("Lock app with Face ID", isOn: $settings.appLockEnabled)
@@ -228,6 +238,15 @@ struct SignInView: View {
     @State private var localJobCount = 0
     @State private var isAskingAboutLocalData = false
     @State private var invitation: MyInvitation?
+    /// Supabase allows a new code only every 60 seconds.
+    @State private var resendAvailableAt = Date.distantPast
+    @State private var notice: String?
+
+    private static let resendInterval: TimeInterval = 60
+
+    private var trimmedEmail: String { email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+    /// Codes are often pasted with spaces or line breaks.
+    private var trimmedCode: String { code.filter { !$0.isWhitespace } }
 
     var body: some View {
         Form {
@@ -250,9 +269,34 @@ struct SignInView: View {
                 Button(codeSent ? "Verify Code" : "Send Code") {
                     Task { await submit() }
                 }
-                .disabled(isWorking || email.isEmpty || (codeSent && code.isEmpty))
+                .disabled(isWorking || trimmedEmail.isEmpty || (codeSent && trimmedCode.isEmpty))
             }
 
+            if codeSent {
+                Section {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        let wait = Int(resendAvailableAt.timeIntervalSince(context.date).rounded(.up))
+                        Button(wait > 0 ? String(localized: "Resend Code (\(wait) s)") : String(localized: "Resend Code"),
+                               systemImage: "arrow.clockwise") {
+                            Task { await resend() }
+                        }
+                        .disabled(isWorking || wait > 0)
+                    }
+                    Button("Use a Different Email", systemImage: "envelope") {
+                        codeSent = false
+                        code = ""
+                        errorMessage = nil
+                        notice = nil
+                    }
+                    .disabled(isWorking)
+                } footer: {
+                    Text("Didn't get the email? Check the spam folder. Only the newest code works.")
+                }
+            }
+
+            if let notice {
+                Text(notice).foregroundStyle(.green)
+            }
             if let errorMessage {
                 Text(errorMessage).foregroundStyle(.red)
             }
@@ -299,6 +343,8 @@ struct SignInView: View {
         do {
             if case let .needsLocalDataDecision(count) = try sync.checkAccount() {
                 localJobCount = count
+                // Sets the sync status, so the sign-in gate shows the decision too.
+                await sync.syncNow()
                 isAskingAboutLocalData = true
                 return
             }
@@ -310,22 +356,43 @@ struct SignInView: View {
         dismiss()
     }
 
+    private func resend() async {
+        isWorking = true
+        defer { isWorking = false }
+        errorMessage = nil
+        notice = nil
+        do {
+            try await backend.sendOTP(email: trimmedEmail)
+            code = ""
+            resendAvailableAt = .now.addingTimeInterval(Self.resendInterval)
+            notice = String(localized: "A new code was sent to \(trimmedEmail).")
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     private func submit() async {
         isWorking = true
         defer { isWorking = false }
         errorMessage = nil
+        notice = nil
         do {
             if codeSent {
-                try await backend.verifyOTP(email: email, code: code)
+                try await backend.verifyOTP(email: trimmedEmail, code: trimmedCode)
                 // An existing account without a company joins only after accepting.
-                if backend.session?.tenantID == nil, let open = try await backend.myInvitation() {
-                    invitation = open
+                if backend.session?.tenantID == nil {
+                    if let open = try await backend.myInvitation() {
+                        invitation = open
+                    } else {
+                        errorMessage = String(localized: "This account does not belong to a company yet. Ask your company's Owner or Admin to invite this email address.")
+                    }
                     return
                 }
                 await continueAfterSignIn()
             } else {
-                try await backend.sendOTP(email: email)
+                try await backend.sendOTP(email: trimmedEmail)
                 codeSent = true
+                resendAvailableAt = .now.addingTimeInterval(Self.resendInterval)
             }
         } catch {
             errorMessage = error.localizedDescription

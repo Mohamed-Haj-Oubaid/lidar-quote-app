@@ -8,7 +8,7 @@ import SwiftData
     @State private var appLock = AppLock()
 
     init() {
-        let schema = Schema([TenantSettings.self, PriceBookVersion.self, Job.self, Survey.self, Quote.self, PendingMutation.self])
+        let schema = Schema([TenantSettings.self, PriceBookVersion.self, Job.self, Survey.self, Quote.self, PendingMutation.self, WorkProof.self, ProofPhoto.self])
         do {
             container = try ModelContainer(for: schema, configurations: ModelConfiguration(schema: schema))
         } catch {

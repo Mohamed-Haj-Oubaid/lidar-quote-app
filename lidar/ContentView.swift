@@ -7,10 +7,26 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(SyncManager.self) private var sync
     @Environment(AppLock.self) private var appLock
+    @Environment(BackendClient.self) private var backend
+
+    /// Nothing opens until the user is signed in to a company and has decided about
+    /// jobs left on the device. Builds without Supabase config stay offline-only.
+    private var needsSignIn: Bool {
+        guard backend.isConfigured else { return false }
+        if backend.session?.tenantID == nil { return true }
+        if case .needsLocalDataDecision = sync.status { return true }
+        return false
+    }
 
     var body: some View {
-        NavigationStack {
-            JobsListView()
+        Group {
+            if needsSignIn {
+                SignInGate()
+            } else {
+                NavigationStack {
+                    JobsListView()
+                }
+            }
         }
         .overlay {
             if appLock.isLocked {
@@ -30,6 +46,52 @@ struct RootView: View {
                 Task { await sync.syncNow() }
             default:
                 break
+            }
+        }
+    }
+}
+
+/// Full-screen sign-in shown instead of the app while signed out.
+private struct SignInGate: View {
+    @Environment(BackendClient.self) private var backend
+    @Environment(SyncManager.self) private var sync
+
+    var body: some View {
+        NavigationStack {
+            if case let .needsLocalDataDecision(count) = sync.status {
+                Form {
+                    Section {
+                        Button("Upload to My Company") { Task { await sync.adoptLocalData() } }
+                        Button("Discard Jobs on This Device", role: .destructive) { Task { await sync.discardLocalData() } }
+                    } header: {
+                        Text("Jobs on this device")
+                    } footer: {
+                        Text("\(count) jobs were created on this device before you signed in. Upload them to your company or discard them?")
+                    }
+                }
+                .navigationTitle("Welcome")
+            } else {
+                SignInView()
+                    .safeAreaInset(edge: .top) {
+                        VStack(spacing: 8) {
+                            Image(systemName: "viewfinder")
+                                .font(.system(size: 44))
+                                .foregroundStyle(.tint)
+                                .accessibilityHidden(true)
+                            Text("Sign in with your work email to continue.")
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding()
+                    }
+                    .toolbar {
+                        if backend.isSignedIn {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button("Sign Out") { Task { await sync.signOut() } }
+                            }
+                        }
+                    }
             }
         }
     }

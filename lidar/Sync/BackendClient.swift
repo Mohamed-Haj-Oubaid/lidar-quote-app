@@ -47,12 +47,33 @@ enum BackendError: LocalizedError {
     case notConfigured
     case notSignedIn
     case http(status: Int, message: String)
+    /// Supabase Auth error with a known `error_code`, shown as plain text.
+    case auth(code: String, message: String)
 
     var errorDescription: String? {
         switch self {
         case .notConfigured: String(localized: "Supabase is not configured (SUPABASE_URL / SUPABASE_ANON_KEY).")
         case .notSignedIn: String(localized: "Please sign in to sync.")
         case let .http(status, message): "HTTP \(status): \(message)"
+        case let .auth(code, message): Self.authMessage(code: code) ?? message
+        }
+    }
+
+    /// Readable texts for the Supabase Auth errors users actually run into.
+    private static func authMessage(code: String) -> String? {
+        switch code {
+        case "otp_expired":
+            String(localized: "The code is wrong or has expired. Only the newest code works – tap Resend Code.")
+        case "over_email_send_rate_limit", "over_request_rate_limit":
+            String(localized: "Too many codes requested. Please wait a few minutes and try again.")
+        case "hook_timeout", "hook_payload_invalid_content_type", "hook_payload_over_size_limit":
+            String(localized: "The server could not check the invitation. Please try again later.")
+        case "signup_disabled", "email_provider_disabled":
+            String(localized: "Sign-in by email is switched off on the server.")
+        case "email_address_invalid":
+            String(localized: "This email address is not valid.")
+        default:
+            nil
         }
     }
 }
@@ -255,7 +276,14 @@ final class BackendClient: BackendAPI {
     private static func validate(_ response: URLResponse, data: Data) throws {
         guard let http = response as? HTTPURLResponse else { return }
         guard (200..<300).contains(http.statusCode) else {
-            throw BackendError.http(status: http.statusCode, message: String(data: data, encoding: .utf8) ?? "")
+            let raw = String(data: data, encoding: .utf8) ?? ""
+            // Supabase Auth answers {"error_code": "...", "msg": "..."}; PostgREST {"code", "message"}.
+            let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+            let message = json["msg"] as? String ?? json["message"] as? String ?? json["error_description"] as? String ?? raw
+            if let code = json["error_code"] as? String {
+                throw BackendError.auth(code: code, message: message)
+            }
+            throw BackendError.http(status: http.statusCode, message: message)
         }
     }
 }

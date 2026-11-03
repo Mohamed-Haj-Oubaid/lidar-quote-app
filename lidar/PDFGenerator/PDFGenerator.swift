@@ -34,8 +34,8 @@ struct QuoteDocument {
 }
 
 enum PDFGenerator {
-    private static let pageRect = CGRect(x: 0, y: 0, width: 595.2, height: 841.8) // A4 @ 72 dpi
-    private static let margin: CGFloat = 48
+    static let pageRect = CGRect(x: 0, y: 0, width: 595.2, height: 841.8) // A4 @ 72 dpi
+    static let margin: CGFloat = 48
 
     static func render(quote: Quote, job: Job, settings: TenantSettings) -> Data? {
         guard let calculation = quote.calculation else { return nil }
@@ -148,7 +148,7 @@ enum PDFGenerator {
 
     private static let footerHeight: CGFloat = 34
     /// Lowest y content may reach; the footer lives below it.
-    private static var contentBottom: CGFloat { pageRect.height - margin - footerHeight }
+    static var contentBottom: CGFloat { pageRect.height - margin - footerHeight }
 
     /// Tracks the current page, draws header/footer on every new page and moves
     /// content that does not fit to the next page.
@@ -230,12 +230,10 @@ enum PDFGenerator {
             y = draw(String(localized: "Quote \(quote.number) (continued)"), at: y, font: .boldSystemFont(ofSize: 10), color: .darkGray)
             return y + 10
         }
-        y = draw(settings.firmName, at: y, font: .boldSystemFont(ofSize: 16))
-        if !settings.firmAddress.isEmpty {
-            y = draw(settings.firmAddress, at: y, font: .systemFont(ofSize: 9), color: .darkGray)
-        }
-        y += 16
-        y = draw(String(localized: "Quote \(quote.number)"), at: y, font: .boldSystemFont(ofSize: 18))
+        let brand = PDFBrand(settings: settings)
+        y = brand.drawLetterhead(settings: settings, at: y)
+        y += 10
+        y = draw(String(localized: "Quote \(quote.number)"), at: y, font: brand.font(18, bold: true), color: brand.color)
         let date = quote.issuedAt.formatted(date: .long, time: .omitted)
         y = draw(String(localized: "Revision \(quote.revision) · \(date)"), at: y, font: .systemFont(ofSize: 9), color: .darkGray)
 
@@ -251,7 +249,7 @@ enum PDFGenerator {
     }
 
     /// Company details (German letter footer) and the page number.
-    private static func drawFooter(settings: TenantSettings, page: Int, of total: Int?) {
+    static func drawFooter(settings: TenantSettings, page: Int, of total: Int?) {
         let top = pageRect.height - margin - footerHeight + 8
         let path = UIBezierPath()
         path.move(to: CGPoint(x: margin, y: top - 4))
@@ -267,16 +265,17 @@ enum PDFGenerator {
             settings.vatID.isEmpty ? nil : String(localized: "VAT ID \(settings.vatID)"),
             settings.bankIBAN.isEmpty ? nil : String(localized: "IBAN \(settings.bankIBAN)"),
         ].compactMap { $0 }.joined(separator: " · ")
+        let note = settings.pdfFooterNote.trimmingCharacters(in: .whitespacesAndNewlines)
         let pageLabel = total.map { String(localized: "Page \(page) of \($0)") } ?? String(localized: "Page \(page)")
         let width = pageRect.width - 2 * margin
-        _ = draw([line1, line2].filter { !$0.isEmpty }.joined(separator: "\n"),
+        _ = draw([note, line1, line2].filter { !$0.isEmpty }.joined(separator: "\n"),
                  in: CGRect(x: margin, y: top, width: width - 80, height: footerHeight), font: .systemFont(ofSize: 7), color: .darkGray)
         _ = draw(pageLabel, in: CGRect(x: pageRect.width - margin - 80, y: top, width: 80, height: 12),
                  font: .systemFont(ofSize: 7), color: .darkGray, alignment: .right)
     }
 
     /// Height a wrapped text needs at the given width (same metrics as `draw`).
-    private static func height(of text: String, font: UIFont, width: CGFloat) -> CGFloat {
+    static func height(of text: String, font: UIFont, width: CGFloat) -> CGFloat {
         let string = NSAttributedString(string: text, attributes: [.font: font])
         let bounds = string.boundingRect(with: CGSize(width: width, height: .greatestFiniteMagnitude),
                                          options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
@@ -306,12 +305,12 @@ enum PDFGenerator {
 
     /// Draws wrapped text across the content width and returns the next y position.
     @discardableResult
-    private static func draw(_ text: String, at y: CGFloat, font: UIFont, color: UIColor = .black, inset: CGFloat = 0) -> CGFloat {
+    static func draw(_ text: String, at y: CGFloat, font: UIFont, color: UIColor = .black, inset: CGFloat = 0) -> CGFloat {
         let width = pageRect.width - 2 * margin - 2 * inset
         return draw(text, in: CGRect(x: margin + inset, y: y, width: width, height: .greatestFiniteMagnitude), font: font, color: color)
     }
 
-    private static func draw(_ text: String, in rect: CGRect, font: UIFont, color: UIColor = .black, alignment: NSTextAlignment = .left) -> CGFloat {
+    static func draw(_ text: String, in rect: CGRect, font: UIFont, color: UIColor = .black, alignment: NSTextAlignment = .left) -> CGFloat {
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = alignment
         let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color, .paragraphStyle: paragraph]

@@ -82,6 +82,8 @@ nonisolated struct OpeningRule: Codable, Hashable {
     static let deductAll = OpeningRule(mode: .all, thresholdM2: 0, addReveals: false, revealDepthM: 0)
     /// DIN 18363-style default: deduct openings > 2.5 m², add reveals.
     static let vobPainting = OpeningRule(mode: .aboveThreshold, thresholdM2: 2.5, addReveals: true, revealDepthM: 0.15)
+    /// Facade systems (e.g. WDVS, DIN 18345): deduct openings > 2.5 m²; reveals are billed as their own item.
+    static let wallSystem = OpeningRule(mode: .aboveThreshold, thresholdM2: 2.5, addReveals: false, revealDepthM: 0)
 }
 
 // MARK: - Price book

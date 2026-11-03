@@ -36,6 +36,15 @@ final class TenantSettings {
     var bankIBAN: String = ""
     var paymentTerms: String = ""
     var quoteValidityDays: Int = 30
+    // PDF design, chosen by the company (see PDFDesignView). Device-local for now.
+    @Attribute(.externalStorage) var logoData: Data?
+    var brandColorHex: String = "#1F4E79"
+    var pdfFontStyle: String = "system"
+    var logoAlignment: String = "left"
+    var pdfHeaderNote: String = ""
+    var pdfFooterNote: String = ""
+    var proofReportTitle: String = ""
+    var proofPhotosPerRow: Int = 2
 
     init(deviceCode: String) {
         self.firmName = Self.defaultFirmName
@@ -73,6 +82,14 @@ final class TenantSettings {
         bankIBAN = ""
         paymentTerms = ""
         quoteValidityDays = 30
+        logoData = nil
+        brandColorHex = PDFBrand.defaultColorHex
+        pdfFontStyle = PDFBrand.FontStyle.system.rawValue
+        logoAlignment = PDFBrand.LogoAlignment.left.rawValue
+        pdfHeaderNote = ""
+        pdfFooterNote = ""
+        proofReportTitle = ""
+        proofPhotosPerRow = 2
     }
 }
 
@@ -112,6 +129,13 @@ final class PriceBookVersion {
         return decoded
     }
 
+    /// Only the local sample book may change after creation (new sample items in an app update).
+    func replaceSampleItems(_ items: [PriceItem]) {
+        guard isLocalSample else { return }
+        itemsData = (try? StoreCoding.encoder.encode(items)) ?? itemsData
+        cachedItems = nil
+    }
+
     var snapshot: PriceBookSnapshot {
         PriceBookSnapshot(versionID: id, version: version, name: name, vatRateBasisPoints: vatRateBasisPoints, items: items)
     }
@@ -134,6 +158,7 @@ final class Job {
 
     @Relationship(deleteRule: .cascade, inverse: \Survey.job) var surveys: [Survey] = []
     @Relationship(deleteRule: .cascade, inverse: \Quote.job) var quotes: [Quote] = []
+    @Relationship(deleteRule: .cascade, inverse: \WorkProof.job) var workProofs: [WorkProof] = []
 
     init(id: UUID = UUID(), title: String, clientName: String = "", clientEmail: String = "", clientPhone: String = "", siteAddress: String = "") {
         self.id = id
@@ -148,6 +173,57 @@ final class Job {
 
     var sortedSurveys: [Survey] { surveys.sorted { $0.capturedAt < $1.capturedAt } }
     var sortedQuotes: [Quote] { quotes.sorted { $0.revision > $1.revision } }
+    var sortedWorkProofs: [WorkProof] { workProofs.sorted { $0.createdAt > $1.createdAt } }
+}
+
+/// Proof of completed work (Arbeitsnachweis): site photos plus the worker's name
+/// and signature. Editable while a draft; locked once signed. Device-local.
+@Model
+final class WorkProof {
+    @Attribute(.unique) var id: UUID
+    var createdAt: Date
+    /// What was done, written by the worker.
+    var workDescription: String
+    var workerName: String
+    var signaturePNG: Data?
+    var signedAt: Date?
+    /// SHA-256 over photos, texts and signature at signing – printed on the PDF so later changes are detectable.
+    var fingerprintSHA256: String?
+    var job: Job?
+    @Relationship(deleteRule: .cascade, inverse: \ProofPhoto.proof) var photos: [ProofPhoto] = []
+
+    init(id: UUID = UUID(), job: Job) {
+        self.id = id
+        self.createdAt = .now
+        self.workDescription = ""
+        self.workerName = ""
+        self.job = job
+    }
+
+    var isSigned: Bool { signedAt != nil }
+    var sortedPhotos: [ProofPhoto] { photos.sorted { $0.takenAt < $1.takenAt } }
+}
+
+/// One site photo of a work proof. The JPEG lives in the protected media directory.
+@Model
+final class ProofPhoto {
+    @Attribute(.unique) var id: UUID
+    var fileName: String
+    /// E.g. "North wall after second coat".
+    var caption: String
+    /// Optional room of the job the photo shows.
+    var roomName: String
+    var takenAt: Date
+    var proof: WorkProof?
+
+    init(id: UUID = UUID(), fileName: String, roomName: String = "", proof: WorkProof) {
+        self.id = id
+        self.fileName = fileName
+        self.caption = ""
+        self.roomName = roomName
+        self.takenAt = .now
+        self.proof = proof
+    }
 }
 
 /// One measured room (Aufmaß) inside a job.

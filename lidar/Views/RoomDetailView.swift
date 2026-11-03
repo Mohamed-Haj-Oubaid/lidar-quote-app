@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import QuickLook
 
 struct RoomDetailView: View {
     @Environment(\.modelContext) private var modelContext
@@ -9,6 +10,14 @@ struct RoomDetailView: View {
     @State private var name = ""
     @State private var nameError: String?
     @FocusState private var isNameFocused: Bool
+    /// Set to the USDZ file to present it in the system 3D viewer (Quick Look).
+    @State private var modelPreviewURL: URL?
+    @State private var modelMissing = false
+    @State private var isRescanning = false
+    @State private var isConfirmingDelete = false
+    /// Set once the room is deleted, so leaving the screen doesn't save it again.
+    @State private var isDeleted = false
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         let m = survey.measurement
@@ -55,14 +64,44 @@ struct RoomDetailView: View {
 
             if survey.usdzFileName != nil {
                 Section {
+                    Button(action: openModel) {
+                        Label("View 3D Model", systemImage: "cube.transparent")
+                    }
                     Label(survey.mediaUploaded ? String(localized: "3D model uploaded") : String(localized: "3D model stored on this device"),
                           systemImage: survey.mediaUploaded ? "icloud" : "iphone")
                 } footer: {
                     Text("Geometry only – no camera images are stored.")
                 }
             }
+
+            Section {
+                if let job = survey.job {
+                    Button("Rescan Room", systemImage: "arrow.triangle.2.circlepath.camera") { isRescanning = true }
+                        .disabled(job.privacyNoticeConfirmedAt == nil || !SurveyEngine.isScanningSupported)
+                }
+                Button("Delete Room", systemImage: "trash", role: .destructive) { isConfirmingDelete = true }
+            } footer: {
+                Text("Rescanning replaces the measurements and 3D model. Name and selected services stay.")
+            }
         }
         .navigationTitle(survey.roomName)
+        .quickLookPreview($modelPreviewURL)
+        .alert("3D model not found", isPresented: $modelMissing) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("The model file is not on this device.")
+        }
+        .confirmationDialog("Delete \(survey.roomName)?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
+            Button("Delete Room", role: .destructive, action: deleteRoom)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Measurements, selected services and the 3D model of this room are deleted. Issued quotes are not changed.")
+        }
+        .fullScreenCover(isPresented: $isRescanning) {
+            if let job = survey.job {
+                ScanRoomView(job: job, replacing: survey)
+            }
+        }
         .onAppear { name = survey.roomName }
         .onChange(of: isNameFocused) { _, focused in
             if !focused { commitName() }
@@ -70,7 +109,30 @@ struct RoomDetailView: View {
         .onDisappear(perform: commitName)
     }
 
+    private func openModel() {
+        guard let fileName = survey.usdzFileName,
+              let url = try? SurveyEngine.mediaURL(for: fileName),
+              FileManager.default.fileExists(atPath: url.path) else {
+            modelMissing = true
+            return
+        }
+        modelPreviewURL = url
+    }
+
+    /// Leaves the screen first, then deletes – so this view never renders a deleted room.
+    private func deleteRoom() {
+        isDeleted = true
+        let survey = survey
+        let context = modelContext
+        dismiss()
+        Task {
+            try? await Task.sleep(for: .milliseconds(500))
+            try? LocalStore.delete(survey: survey, in: context)
+        }
+    }
+
     private func commitName() {
+        guard !isDeleted else { return }
         do {
             try LocalStore.rename(survey: survey, to: name, in: modelContext)
             nameError = nil

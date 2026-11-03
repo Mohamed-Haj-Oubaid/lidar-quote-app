@@ -55,10 +55,11 @@
       "build-settings": {
         "CODE_SIGN_STYLE": "Automatic",
         "CURRENT_PROJECT_VERSION": "1",
+        "DEVELOPMENT_TEAM": "RCKNLKBGM5",
         "ENABLE_PREVIEWS": "YES",
         "GENERATE_INFOPLIST_FILE": "YES",
         "INFOPLIST_FILE": "lidar/Info.plist",
-        "INFOPLIST_KEY_NSCameraUsageDescription": "The camera and LiDAR scanner are used to measure rooms for your quote. No camera images are stored — only room geometry.",
+        "INFOPLIST_KEY_NSCameraUsageDescription": "The camera and LiDAR scanner measure rooms for your quote (only room geometry is stored). The camera is also used for photos documenting completed work.",
         "INFOPLIST_KEY_NSFaceIDUsageDescription": "Face ID locks the app so client data stays protected if the device is lost.",
         "INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]": "YES",
         "INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]": "YES",
