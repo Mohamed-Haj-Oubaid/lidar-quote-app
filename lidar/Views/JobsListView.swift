@@ -7,14 +7,24 @@ struct JobsListView: View {
     @State private var isCreatingJob = false
     @State private var isShowingSettings = false
     @State private var jobToDelete: Job?
+    @State private var stageFilter: JobStage?
+
+    private var visibleJobs: [Job] {
+        guard let stageFilter else { return jobs }
+        return jobs.filter { $0.stage == stageFilter }
+    }
 
     var body: some View {
         List {
-            ForEach(jobs) { job in
+            ForEach(visibleJobs) { job in
                 NavigationLink(value: job) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(job.title)
-                            .font(.headline)
+                        HStack {
+                            Text(job.title)
+                                .font(.headline)
+                            Spacer()
+                            StageBadge(stage: job.stage)
+                        }
                         if !job.clientName.isEmpty {
                             Text(job.clientName)
                                 .foregroundStyle(.secondary)
@@ -22,6 +32,14 @@ struct JobsListView: View {
                         Text("\(job.surveys.count) rooms · \(job.quotes.count) quotes")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                        if let start = job.plannedStart {
+                            Label(job.assignedWorker.isEmpty
+                                  ? start.formatted(date: .abbreviated, time: .omitted)
+                                  : "\(start.formatted(date: .abbreviated, time: .omitted)) · \(job.assignedWorker)",
+                                  systemImage: "calendar")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 .swipeActions {
@@ -68,6 +86,23 @@ struct JobsListView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 SyncStatusBadge()
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu("Filter", systemImage: stageFilter == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill") {
+                    Picker("Stage", selection: $stageFilter) {
+                        Text("All Jobs").tag(JobStage?.none)
+                        ForEach(JobStage.allCases) { stage in
+                            Label(stage.title, systemImage: stage.systemImage).tag(Optional(stage))
+                        }
+                    }
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    ScheduleView()
+                } label: {
+                    Label("Schedule", systemImage: "calendar")
+                }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("New Job", systemImage: "plus") { isCreatingJob = true }

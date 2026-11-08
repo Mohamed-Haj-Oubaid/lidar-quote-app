@@ -1,0 +1,6803 @@
+{
+  "sourceLanguage": "de",
+  "strings": {
+    "#%lld · %@ m": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "#%1$lld · %2$@ m"
+          }
+        }
+      }
+    },
+    "%": {},
+    "%@ %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@ %@/%@%@ · %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ %2$@/%3$@%4$@ · %5$@"
+          }
+        }
+      }
+    },
+    "%@ (%@)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "%@ (continued)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (Fortsetzung)"
+          }
+        }
+      }
+    },
+    "%@ and its rooms are deleted on all devices.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ und die zugehörigen Räume werden auf allen Geräten gelöscht."
+          }
+        }
+      }
+    },
+    "%@ and its rooms are deleted on all devices. Its %lld issued quotes stay on the server for commercial record-keeping.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ und die zugehörigen Räume werden auf allen Geräten gelöscht. Die %2$lld ausgestellten Angebote bleiben zur kaufmännischen Aufbewahrung auf dem Server."
+          }
+        }
+      }
+    },
+    "%@ invited you to work with them in this app. Jobs and quotes you create will belong to this company.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ hat Sie eingeladen, in dieser App mitzuarbeiten. Ihre Aufträge und Angebote gehören dann zu dieser Firma."
+          }
+        }
+      }
+    },
+    "%@ will never reach the server.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ wird nie an den Server gesendet."
+          }
+        }
+      }
+    },
+    "%@ will never reach the server. These dependent changes are discarded too: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ wird nie an den Server gesendet. Diese abhängigen Änderungen werden ebenfalls verworfen: %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %@ / %@ (%@ %@ + %@ %@) · %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$@ / %3$@ (%4$@ %5$@ + %6$@ %7$@) · %8$@"
+          }
+        }
+      }
+    },
+    "%@ · %@ / %@ · %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$@ / %3$@ · %4$@"
+          }
+        }
+      }
+    },
+    "%@ · %@ × %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$@ × %3$@"
+          }
+        }
+      }
+    },
+    "%@ · v%lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · v%2$lld"
+          }
+        }
+      }
+    },
+    "%@ – %@ (continued)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ – %2$@ (Fortsetzung)"
+          }
+        }
+      }
+    },
+    "%@%@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@%2$@"
+          }
+        }
+      }
+    },
+    "%@: %@ × %@ m%@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@: %2$@ × %3$@ m%4$@"
+          }
+        }
+      }
+    },
+    "%@: floor %@, walls gross %@, openings %@, %lld doors, %lld windows": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: Boden %2$@, Wände brutto %3$@, Öffnungen %4$@, %5$lld Türen, %6$lld Fenster"
+          }
+        }
+      }
+    },
+    "%lld": {},
+    "%lld changes have not been synced and will be lost.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Änderungen wurden noch nicht synchronisiert und gehen verloren."
+          }
+        }
+      }
+    },
+    "%lld changes need attention": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Änderungen erfordern Aufmerksamkeit"
+          }
+        }
+      }
+    },
+    "%lld changes waiting": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Änderungen warten"
+          }
+        }
+      }
+    },
+    "%lld changes were made by another account on this device and are not sent.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Änderungen stammen von einem anderen Konto auf diesem Gerät und werden nicht gesendet."
+          }
+        }
+      }
+    },
+    "%lld doors": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Türen"
+          }
+        }
+      }
+    },
+    "%lld jobs were created on this device before you signed in. Nothing is synced until you choose.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Aufträge wurden vor der Anmeldung auf diesem Gerät erstellt. Bis zu Ihrer Entscheidung wird nichts synchronisiert."
+          }
+        }
+      }
+    },
+    "%lld jobs were created on this device before you signed in. Upload them to your company or discard them?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Aufträge wurden vor der Anmeldung auf diesem Gerät erstellt. In Ihre Firma hochladen oder verwerfen?"
+          }
+        }
+      }
+    },
+    "%lld measurements": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Messungen"
+          }
+        }
+      }
+    },
+    "%lld percent": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Prozent"
+          }
+        }
+      }
+    },
+    "%lld photos · %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld Fotos · %2$@"
+          }
+        }
+      }
+    },
+    "%lld rooms · %lld quotes": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld Räume · %2$lld Angebote"
+          }
+        }
+      }
+    },
+    "%lld windows": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Fenster"
+          }
+        }
+      }
+    },
+    "%lld × %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld × %2$@"
+          }
+        }
+      }
+    },
+    "+%lld %%": {},
+    "10000": {},
+    "3D Photo Capture": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D-Fotoaufnahme"
+          }
+        }
+      }
+    },
+    "3D model not found": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D-Modell nicht gefunden"
+          }
+        }
+      }
+    },
+    "3D model stored on this device": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D-Modell auf diesem Gerät gespeichert"
+          }
+        }
+      }
+    },
+    "3D model style": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Darstellung des 3D-Modells"
+          }
+        }
+      }
+    },
+    "3D model uploaded": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D-Modell hochgeladen"
+          }
+        }
+      }
+    },
+    "8400": {},
+    "A PNG with transparent background looks best.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Am besten wirkt ein PNG mit transparentem Hintergrund."
+          }
+        }
+      }
+    },
+    "A new code was sent to %@.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein neuer Code wurde an %@ gesendet."
+          }
+        }
+      }
+    },
+    "Above threshold": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Über Schwellenwert"
+          }
+        }
+      }
+    },
+    "Accept Quote": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angebot annehmen"
+          }
+        }
+      }
+    },
+    "Accepted": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angenommen"
+          }
+        }
+      }
+    },
+    "Accepted %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angenommen %@"
+          }
+        }
+      }
+    },
+    "Account": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto"
+          }
+        }
+      }
+    },
+    "Actions": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktionen"
+          }
+        }
+      }
+    },
+    "Active": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktiv"
+          }
+        }
+      }
+    },
+    "Add": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hinzufügen"
+          }
+        }
+      }
+    },
+    "Add Door": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tür hinzufügen"
+          }
+        }
+      }
+    },
+    "Add Item": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Position hinzufügen"
+          }
+        }
+      }
+    },
+    "Add Material": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Material hinzufügen"
+          }
+        }
+      }
+    },
+    "Add Opening": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnung hinzufügen"
+          }
+        }
+      }
+    },
+    "Add Room": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raum hinzufügen"
+          }
+        }
+      }
+    },
+    "Add Room Manually": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raum manuell anlegen"
+          }
+        }
+      }
+    },
+    "Add Window": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fenster hinzufügen"
+          }
+        }
+      }
+    },
+    "Add reveals": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laibungen hinzurechnen"
+          }
+        }
+      }
+    },
+    "Admin": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Admin"
+          }
+        }
+      }
+    },
+    "All Jobs": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Aufträge"
+          }
+        }
+      }
+    },
+    "All jobs, rooms and quotes on this device are deleted. Data already synced stays on the server.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Aufträge, Räume und Angebote auf diesem Gerät werden gelöscht. Bereits synchronisierte Daten bleiben auf dem Server."
+          }
+        }
+      }
+    },
+    "All openings": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Öffnungen"
+          }
+        }
+      }
+    },
+    "All openings deducted": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Öffnungen abgezogen"
+          }
+        }
+      }
+    },
+    "All windows in this room": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Fenster in diesem Raum"
+          }
+        }
+      }
+    },
+    "All windows on this wall": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Fenster an dieser Wand"
+          }
+        }
+      }
+    },
+    "Area": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fläche"
+          }
+        }
+      }
+    },
+    "Assigned worker / team": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zuständiger Mitarbeiter / Kolonne"
+          }
+        }
+      }
+    },
+    "Attached you will find our invoice %@ as PDF and as e-invoice (XRechnung).": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "anbei erhalten Sie unsere Rechnung %@ als PDF und als E-Rechnung (XRechnung)."
+          }
+        }
+      }
+    },
+    "Average wall height": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mittlere Wandhöhe"
+          }
+        }
+      }
+    },
+    "Bank account: IBAN %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bankverbindung: IBAN %@"
+          }
+        }
+      }
+    },
+    "Based on": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basiert auf"
+          }
+        }
+      }
+    },
+    "Billed by": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrechnung nach"
+          }
+        }
+      }
+    },
+    "Bluetooth access denied. Allow it in Settings.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth-Zugriff verweigert. Bitte in den Einstellungen erlauben."
+          }
+        }
+      }
+    },
+    "Bluetooth is off. Turn it on in Control Center.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth ist aus. Bitte im Kontrollzentrum einschalten."
+          }
+        }
+      }
+    },
+    "Booking batch (EXTF) with one booking per invoice: debtor account to revenue account. Please have your tax advisor check the accounts.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buchungsstapel (EXTF) mit einer Buchung je Rechnung: Debitorenkonto an Erlöskonto. Bitte lassen Sie die Konten von Ihrem Steuerberater prüfen."
+          }
+        }
+      }
+    },
+    "Brand colour": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmenfarbe"
+          }
+        }
+      }
+    },
+    "By signing you confirm the work was carried out as documented. The report can no longer be changed afterwards.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit der Unterschrift bestätigen Sie, dass die Arbeiten wie dokumentiert ausgeführt wurden. Der Bericht kann danach nicht mehr geändert werden."
+          }
+        }
+      }
+    },
+    "Calculated area": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Berechnete Fläche"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abbrechen"
+          }
+        }
+      }
+    },
+    "Caption, e.g. North wall": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beschriftung, z. B. Nordwand"
+          }
+        }
+      }
+    },
+    "Ceiling area": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deckenfläche"
+          }
+        }
+      }
+    },
+    "Ceiling height": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deckenhöhe"
+          }
+        }
+      }
+    },
+    "Ceiling painting": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deckenanstrich"
+          }
+        }
+      }
+    },
+    "Center": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitte"
+          }
+        }
+      }
+    },
+    "Center height": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Höhe der Mitte"
+          }
+        }
+      }
+    },
+    "Change Logo": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo ändern"
+          }
+        }
+      }
+    },
+    "Changes are kept on this device until the server accepts them. Changes the server refused are shown in orange.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Änderungen bleiben auf diesem Gerät, bis der Server sie annimmt. Vom Server abgelehnte Änderungen sind orange markiert."
+          }
+        }
+      }
+    },
+    "Choose Logo": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo wählen"
+          }
+        }
+      }
+    },
+    "Choose Photo": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto wählen"
+          }
+        }
+      }
+    },
+    "Choose scan mode": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanmodus wählen"
+          }
+        }
+      }
+    },
+    "Choose what to do with jobs on this device (Settings)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entscheiden Sie, was mit den Aufträgen auf diesem Gerät geschieht (Einstellungen)"
+          }
+        }
+      }
+    },
+    "Clear": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Löschen"
+          }
+        }
+      }
+    },
+    "Clear Signature": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unterschrift löschen"
+          }
+        }
+      }
+    },
+    "Clear measurements": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messungen löschen"
+          }
+        }
+      }
+    },
+    "Client": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunde"
+          }
+        }
+      }
+    },
+    "Client Informed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunde informiert"
+          }
+        }
+      }
+    },
+    "Client Signature": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unterschrift des Kunden"
+          }
+        }
+      }
+    },
+    "Client Signs Quote": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunde unterschreibt Angebot"
+          }
+        }
+      }
+    },
+    "Client address with postal code and city": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kundenadresse mit PLZ und Ort"
+          }
+        }
+      }
+    },
+    "Client data erased %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kundendaten gelöscht %@"
+          }
+        }
+      }
+    },
+    "Client e-mail": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-Mail des Kunden"
+          }
+        }
+      }
+    },
+    "Client name": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name des Kunden"
+          }
+        }
+      }
+    },
+    "Client number (Mandantennummer)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mandantennummer"
+          }
+        }
+      }
+    },
+    "Client privacy notice": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datenschutzhinweis für Kunden"
+          }
+        }
+      }
+    },
+    "Client – signed on the device": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunde – auf dem Gerät unterschrieben"
+          }
+        }
+      }
+    },
+    "Close": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schließen"
+          }
+        }
+      }
+    },
+    "Coats: %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anstriche: %lld"
+          }
+        }
+      }
+    },
+    "Code": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code"
+          }
+        }
+      }
+    },
+    "Code from email": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code aus der E-Mail"
+          }
+        }
+      }
+    },
+    "Color": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Farbe"
+          }
+        }
+      }
+    },
+    "Company": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma"
+          }
+        }
+      }
+    },
+    "Company address": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmenadresse"
+          }
+        }
+      }
+    },
+    "Company address (street, postal code and city)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmenadresse (Straße, PLZ und Ort)"
+          }
+        }
+      }
+    },
+    "Company administration": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmenverwaltung"
+          }
+        }
+      }
+    },
+    "Company e-mail": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-Mail der Firma"
+          }
+        }
+      }
+    },
+    "Company logo": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmenlogo"
+          }
+        }
+      }
+    },
+    "Company name": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmenname"
+          }
+        }
+      }
+    },
+    "Company phone": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefon der Firma"
+          }
+        }
+      }
+    },
+    "Company settings": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmeneinstellungen"
+          }
+        }
+      }
+    },
+    "Completed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abgeschlossen"
+          }
+        }
+      }
+    },
+    "Confirmation": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bestätigung"
+          }
+        }
+      }
+    },
+    "Connect Laser": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laser verbinden"
+          }
+        }
+      }
+    },
+    "Connected: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbunden: %@"
+          }
+        }
+      }
+    },
+    "Connecting to %@…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinde mit %@ …"
+          }
+        }
+      }
+    },
+    "Consultant number (Beraternummer)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beraternummer"
+          }
+        }
+      }
+    },
+    "Consumption": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbrauch"
+          }
+        }
+      }
+    },
+    "Contained labour costs (§ 35a EStG): net %@ · VAT %@ · gross %@. Material net %@.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enthaltene Arbeitskosten (§ 35a EStG): netto %1$@ · MwSt. %2$@ · brutto %3$@. Material netto %4$@."
+          }
+        }
+      }
+    },
+    "Content": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inhalt"
+          }
+        }
+      }
+    },
+    "Content (%@)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inhalt (%@)"
+          }
+        }
+      }
+    },
+    "Continue until at least 80%. Colored points show the surfaces already captured.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiter scannen bis mindestens 80 %. Farbige Punkte zeigen die bereits erfassten Flächen."
+          }
+        }
+      }
+    },
+    "Coverage is sufficient. Colored points show exactly what LiDAR captured.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Abdeckung reicht aus. Farbige Punkte zeigen genau, was LiDAR erfasst hat."
+          }
+        }
+      }
+    },
+    "Crack": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riss"
+          }
+        }
+      }
+    },
+    "Create": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erstellen"
+          }
+        }
+      }
+    },
+    "Create DATEV Export": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DATEV-Export erstellen"
+          }
+        }
+      }
+    },
+    "Create Invoice": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechnung erstellen"
+          }
+        }
+      }
+    },
+    "Create Quote": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angebot erstellen"
+          }
+        }
+      }
+    },
+    "Create a job to scan rooms and issue a quote – no connection needed.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legen Sie einen Auftrag an, um Räume zu scannen und ein Angebot zu erstellen – ganz ohne Internet."
+          }
+        }
+      }
+    },
+    "Created by another account on this device – not sent.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Von einem anderen Konto auf diesem Gerät erstellt – nicht gesendet."
+          }
+        }
+      }
+    },
+    "DATEV export": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DATEV-Export"
+          }
+        }
+      }
+    },
+    "DRAFT – NOT SIGNED": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ENTWURF – NICHT UNTERSCHRIEBEN"
+          }
+        }
+      }
+    },
+    "Damage (%lld)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schäden (%lld)"
+          }
+        }
+      }
+    },
+    "Damage documentation": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schadensdokumentation"
+          }
+        }
+      }
+    },
+    "Date": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datum"
+          }
+        }
+      }
+    },
+    "Date of service": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leistungsdatum"
+          }
+        }
+      }
+    },
+    "Dear %@,": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guten Tag %@,"
+          }
+        }
+      }
+    },
+    "Dear Sir or Madam,": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sehr geehrte Damen und Herren,"
+          }
+        }
+      }
+    },
+    "Debtor account": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Debitorenkonto"
+          }
+        }
+      }
+    },
+    "Deduction": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abzug"
+          }
+        }
+      }
+    },
+    "Default waste: %lld %%": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard-Verschnitt: %lld %%"
+          }
+        }
+      }
+    },
+    "Delete": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Löschen"
+          }
+        }
+      }
+    },
+    "Delete %@?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ löschen?"
+          }
+        }
+      }
+    },
+    "Delete Draft": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entwurf löschen"
+          }
+        }
+      }
+    },
+    "Delete Job": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auftrag löschen"
+          }
+        }
+      }
+    },
+    "Delete Room": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raum löschen"
+          }
+        }
+      }
+    },
+    "Delete job": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auftrag löschen"
+          }
+        }
+      }
+    },
+    "Delete room": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raum löschen"
+          }
+        }
+      }
+    },
+    "Delete this draft and its photos?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diesen Entwurf mit allen Fotos löschen?"
+          }
+        }
+      }
+    },
+    "Delete this job?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diesen Auftrag löschen?"
+          }
+        }
+      }
+    },
+    "Denser capture for objects, corners, furniture, and small surfaces.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dichtere Erfassung für Objekte, Ecken, Möbel und kleine Flächen."
+          }
+        }
+      }
+    },
+    "Depth": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiefe"
+          }
+        }
+      }
+    },
+    "Describe what was done": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beschreiben Sie die ausgeführten Arbeiten"
+          }
+        }
+      }
+    },
+    "Description": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beschreibung"
+          }
+        }
+      }
+    },
+    "Description, e.g. crack 40 cm above window": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beschreibung, z. B. Riss 40 cm über dem Fenster"
+          }
+        }
+      }
+    },
+    "Device": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerät"
+          }
+        }
+      }
+    },
+    "Device code": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerätecode"
+          }
+        }
+      }
+    },
+    "Devices": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geräte"
+          }
+        }
+      }
+    },
+    "Didn't get the email? Check the spam folder. Only the newest code works.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine E-Mail erhalten? Bitte den Spam-Ordner prüfen. Nur der neueste Code ist gültig."
+          }
+        }
+      }
+    },
+    "Dimensions": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maße"
+          }
+        }
+      }
+    },
+    "Dimensions were captured with LiDAR scanning, laser distance meter or manual entry and checked by our staff. Final billing follows the actual measured quantities.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Maße wurden per LiDAR-Scan, Laser-Entfernungsmesser oder manueller Eingabe erfasst und von unseren Mitarbeitern geprüft. Abgerechnet wird nach tatsächlichem Aufmaß."
+          }
+        }
+      }
+    },
+    "Dimensions were captured with machine-assisted LiDAR measurement and checked by our staff. Final billing follows the actual measured quantities.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Maße wurden maschinengestützt per LiDAR erfasst und von unseren Mitarbeitern geprüft. Abgerechnet wird nach tatsächlichem Aufmaß."
+          }
+        }
+      }
+    },
+    "Discard": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwerfen"
+          }
+        }
+      }
+    },
+    "Discard Jobs on This Device": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufträge auf diesem Gerät verwerfen"
+          }
+        }
+      }
+    },
+    "Discard this change?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Änderung verwerfen?"
+          }
+        }
+      }
+    },
+    "Disconnect": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trennen"
+          }
+        }
+      }
+    },
+    "Distance": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abstand"
+          }
+        }
+      }
+    },
+    "Document Damage": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schaden dokumentieren"
+          }
+        }
+      }
+    },
+    "Documents": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokumente"
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fertig"
+          }
+        }
+      }
+    },
+    "Door": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tür"
+          }
+        }
+      }
+    },
+    "Door frame painting": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Türzargen lackieren"
+          }
+        }
+      }
+    },
+    "Door widths deducted": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Türbreiten abgezogen"
+          }
+        }
+      }
+    },
+    "Doors": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Türen"
+          }
+        }
+      }
+    },
+    "Doors & windows": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Türen & Fenster"
+          }
+        }
+      }
+    },
+    "Doors / windows": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Türen / Fenster"
+          }
+        }
+      }
+    },
+    "Doors: %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Türen: %lld"
+          }
+        }
+      }
+    },
+    "Draft": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entwurf"
+          }
+        }
+      }
+    },
+    "Draw Floor Plan": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grundriss zeichnen"
+          }
+        }
+      }
+    },
+    "Draw Floor Plan & Laser Measure": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grundriss zeichnen & mit Laser messen"
+          }
+        }
+      }
+    },
+    "Draw the outline of the building in one stroke. Each side becomes one facade wall.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeichnen Sie den Umriss des Gebäudes in einem Zug. Jede Seite wird eine Fassadenwand."
+          }
+        }
+      }
+    },
+    "Draw the outline of the room or floor in one stroke with your finger or Apple Pencil.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeichnen Sie den Umriss des Raums oder Geschosses in einem Zug mit dem Finger oder Apple Pencil."
+          }
+        }
+      }
+    },
+    "Due %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fällig %@"
+          }
+        }
+      }
+    },
+    "E-invoice incomplete – missing: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-Rechnung unvollständig – es fehlt: %@"
+          }
+        }
+      }
+    },
+    "Edit": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bearbeiten"
+          }
+        }
+      }
+    },
+    "Edit Floor Plan": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grundriss bearbeiten"
+          }
+        }
+      }
+    },
+    "Edit Job": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auftrag bearbeiten"
+          }
+        }
+      }
+    },
+    "Email": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-Mail"
+          }
+        }
+      }
+    },
+    "End": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ende"
+          }
+        }
+      }
+    },
+    "Engine": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechenkern"
+          }
+        }
+      }
+    },
+    "Enter a room name.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitte einen Raumnamen eingeben."
+          }
+        }
+      }
+    },
+    "Enter the client's name and let them sign.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitte den Namen des Kunden eingeben und unterschreiben lassen."
+          }
+        }
+      }
+    },
+    "Enter the worker's name.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitte den Namen des Mitarbeiters eingeben."
+          }
+        }
+      }
+    },
+    "Erase": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Löschen"
+          }
+        }
+      }
+    },
+    "Erase Client Data…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kundendaten löschen …"
+          }
+        }
+      }
+    },
+    "Erase Company Data on This Device": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmendaten auf diesem Gerät löschen"
+          }
+        }
+      }
+    },
+    "Erase Permanently": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Endgültig löschen"
+          }
+        }
+      }
+    },
+    "Erase company data on this device?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmendaten auf diesem Gerät löschen?"
+          }
+        }
+      }
+    },
+    "Erase this client's personal data?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personenbezogene Daten dieses Kunden löschen?"
+          }
+        }
+      }
+    },
+    "Erased job": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gelöschter Auftrag"
+          }
+        }
+      }
+    },
+    "Erasure failed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Löschen fehlgeschlagen"
+          }
+        }
+      }
+    },
+    "Estimator": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitarbeiter"
+          }
+        }
+      }
+    },
+    "Export Company Data": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmendaten exportieren"
+          }
+        }
+      }
+    },
+    "Exporting…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportiere …"
+          }
+        }
+      }
+    },
+    "Facade": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fassade"
+          }
+        }
+      }
+    },
+    "Facade %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fassade %lld"
+          }
+        }
+      }
+    },
+    "Facade height": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fassadenhöhe"
+          }
+        }
+      }
+    },
+    "Facades": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fassaden"
+          }
+        }
+      }
+    },
+    "Fast architectural scan for walls, doors, windows, and measurements.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schneller Raumscan für Wände, Türen, Fenster und Maße."
+          }
+        }
+      }
+    },
+    "Filter": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter"
+          }
+        }
+      }
+    },
+    "Finish Without More Photos": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ohne weitere Fotos abschließen"
+          }
+        }
+      }
+    },
+    "Fixed piece": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pauschal"
+          }
+        }
+      }
+    },
+    "Flaking plaster / paint": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abplatzender Putz / Anstrich"
+          }
+        }
+      }
+    },
+    "Floor": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boden"
+          }
+        }
+      }
+    },
+    "Floor %@ · Walls %@ · %lld doors · %lld windows": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boden %1$@ · Wände %2$@ · %3$lld Türen · %4$lld Fenster"
+          }
+        }
+      }
+    },
+    "Floor Plan": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grundriss"
+          }
+        }
+      }
+    },
+    "Floor area": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bodenfläche"
+          }
+        }
+      }
+    },
+    "Floor area %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bodenfläche %@"
+          }
+        }
+      }
+    },
+    "Floor area (m²)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bodenfläche (m²)"
+          }
+        }
+      }
+    },
+    "Floor area could not be recalculated – please enter it manually.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Bodenfläche konnte nicht neu berechnet werden – bitte manuell eingeben."
+          }
+        }
+      }
+    },
+    "Floor plan": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grundriss"
+          }
+        }
+      }
+    },
+    "Floor tiles incl. laying": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bodenfliesen inkl. Verlegung"
+          }
+        }
+      }
+    },
+    "Font": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schrift"
+          }
+        }
+      }
+    },
+    "Footer note, e.g. court of registration": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fußzeile, z. B. Registergericht"
+          }
+        }
+      }
+    },
+    "For e-invoices (XRechnung) the company address must contain street, postal code and city, plus phone, e-mail and VAT ID or tax number.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für E-Rechnungen (XRechnung) muss die Firmenadresse Straße, PLZ und Ort enthalten, dazu Telefon, E-Mail und USt-IdNr. oder Steuernummer."
+          }
+        }
+      }
+    },
+    "From": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Von"
+          }
+        }
+      }
+    },
+    "Full name": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vor- und Nachname"
+          }
+        }
+      }
+    },
+    "German invoices must state when the work was carried out (§ 14 UStG). The invoice number is assigned automatically and never repeats.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechnungen müssen den Zeitpunkt der Leistung angeben (§ 14 UStG). Die Rechnungsnummer wird automatisch vergeben und wiederholt sich nie."
+          }
+        }
+      }
+    },
+    "Gross": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brutto"
+          }
+        }
+      }
+    },
+    "Gross area": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bruttofläche"
+          }
+        }
+      }
+    },
+    "Gross profit": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rohertrag"
+          }
+        }
+      }
+    },
+    "Gross profit = net revenue − material purchase cost from the material list, before wages. Only owners and admins see this.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rohertrag = Nettoumsatz − Materialeinkauf laut Materialliste, vor Lohnkosten. Nur Inhaber und Admins sehen diese Angaben."
+          }
+        }
+      }
+    },
+    "Gross total": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesamtbetrag brutto"
+          }
+        }
+      }
+    },
+    "Header note, e.g. slogan or master craftsman": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopfzeile, z. B. Slogan oder Meisterbetrieb"
+          }
+        }
+      }
+    },
+    "Height": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Höhe"
+          }
+        }
+      }
+    },
+    "High Detail": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hohe Detailtreue"
+          }
+        }
+      }
+    },
+    "Higher quality modes capture more points and photos. Move slowly for the best result.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Höhere Qualitätsstufen erfassen mehr Punkte und Fotos. Für das beste Ergebnis langsam bewegen."
+          }
+        }
+      }
+    },
+    "Horizontal": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Horizontal"
+          }
+        }
+      }
+    },
+    "I accept this quote and order the services listed above at the stated prices.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich nehme dieses Angebot an und beauftrage die oben aufgeführten Leistungen zu den genannten Preisen."
+          }
+        }
+      }
+    },
+    "I confirm that the work described above has been carried out and documented with the photos shown.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich bestätige, dass die oben beschriebenen Arbeiten ausgeführt und mit den gezeigten Fotos dokumentiert wurden."
+          }
+        }
+      }
+    },
+    "IBAN": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IBAN"
+          }
+        }
+      }
+    },
+    "IBAN %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IBAN %@"
+          }
+        }
+      }
+    },
+    "In progress": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Ausführung"
+          }
+        }
+      }
+    },
+    "Included": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enthalten"
+          }
+        }
+      }
+    },
+    "Inquiry": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anfrage"
+          }
+        }
+      }
+    },
+    "Interactive mesh plus a local-only Photo mode built from camera color and LiDAR depth. Wall and opening measurements remain visible in every mode.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interaktives Modell und ein lokaler Fotomodus aus Kamerafarbe und LiDAR-Tiefe. Wand- und Öffnungsmaße bleiben in jedem Modus sichtbar."
+          }
+        }
+      }
+    },
+    "Interior wall insulation": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Innendämmung Wand"
+          }
+        }
+      }
+    },
+    "Invite": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einladen"
+          }
+        }
+      }
+    },
+    "Invoice %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechnung %@"
+          }
+        }
+      }
+    },
+    "Invoice %@ – %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechnung %1$@ – %2$@"
+          }
+        }
+      }
+    },
+    "Invoice date %@ · Date of service %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechnungsdatum %1$@ · Leistungsdatum %2$@"
+          }
+        }
+      }
+    },
+    "Invoice number prefix": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Präfix der Rechnungsnummer"
+          }
+        }
+      }
+    },
+    "Invoiced": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abgerechnet"
+          }
+        }
+      }
+    },
+    "Invoices": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechnungen"
+          }
+        }
+      }
+    },
+    "Invoices & DATEV Export": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechnungen & DATEV-Export"
+          }
+        }
+      }
+    },
+    "Invoices are stored on this device only. Export them regularly (PDF, XRechnung, DATEV) – they must be kept for 10 years.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechnungen werden nur auf diesem Gerät gespeichert. Exportieren Sie sie regelmäßig (PDF, XRechnung, DATEV) – sie müssen 10 Jahre aufbewahrt werden."
+          }
+        }
+      }
+    },
+    "Issue Quote": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angebot ausstellen"
+          }
+        }
+      }
+    },
+    "Issued": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausgestellt"
+          }
+        }
+      }
+    },
+    "Item": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Position"
+          }
+        }
+      }
+    },
+    "Items": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Positionen"
+          }
+        }
+      }
+    },
+    "Job": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auftrag"
+          }
+        }
+      }
+    },
+    "Jobs": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufträge"
+          }
+        }
+      }
+    },
+    "Jobs created before sign-in": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vor der Anmeldung erstellte Aufträge"
+          }
+        }
+      }
+    },
+    "Jobs on this device": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufträge auf diesem Gerät"
+          }
+        }
+      }
+    },
+    "Jobs, rooms, quotes and 3D models of your company are removed from this device.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufträge, Räume, Angebote und 3D-Modelle Ihrer Firma werden von diesem Gerät entfernt."
+          }
+        }
+      }
+    },
+    "Join %@?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ beitreten?"
+          }
+        }
+      }
+    },
+    "Join as %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Als %@ beitreten"
+          }
+        }
+      }
+    },
+    "Keep 3D models & photos on device only": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D-Modelle & Fotos nur auf dem Gerät speichern"
+          }
+        }
+      }
+    },
+    "Kind regards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit freundlichen Grüßen"
+          }
+        }
+      }
+    },
+    "Labour (net)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lohn (netto)"
+          }
+        }
+      }
+    },
+    "Labour per %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lohn je %@"
+          }
+        }
+      }
+    },
+    "Laser": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laser"
+          }
+        }
+      }
+    },
+    "Laser Meter": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laser-Entfernungsmesser"
+          }
+        }
+      }
+    },
+    "Laser meter": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laser-Entfernungsmesser"
+          }
+        }
+      }
+    },
+    "Last sync": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzte Synchronisierung"
+          }
+        }
+      }
+    },
+    "Left": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Links"
+          }
+        }
+      }
+    },
+    "Length": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Länge"
+          }
+        }
+      }
+    },
+    "LiDAR scan": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LiDAR-Scan"
+          }
+        }
+      }
+    },
+    "Living room": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wohnzimmer"
+          }
+        }
+      }
+    },
+    "Lock app with Face ID": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App mit Face ID sperren"
+          }
+        }
+      }
+    },
+    "Locked": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesperrt"
+          }
+        }
+      }
+    },
+    "Logo": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo"
+          }
+        }
+      }
+    },
+    "Logo position": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo-Position"
+          }
+        }
+      }
+    },
+    "Logo, colours and layout of your quotes and work reports.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo, Farben und Layout Ihrer Angebote und Arbeitsnachweise."
+          }
+        }
+      }
+    },
+    "Make Active": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktivieren"
+          }
+        }
+      }
+    },
+    "Manual depth": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manuelle Tiefe"
+          }
+        }
+      }
+    },
+    "Manual entry": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manuelle Eingabe"
+          }
+        }
+      }
+    },
+    "Manually adjusted": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manuell angepasst"
+          }
+        }
+      }
+    },
+    "Mark as Paid": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Als bezahlt markieren"
+          }
+        }
+      }
+    },
+    "Mark as Sent": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Als versendet markieren"
+          }
+        }
+      }
+    },
+    "Material %@ + labour %@ per %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Material %1$@ + Lohn %2$@ je %3$@"
+          }
+        }
+      }
+    },
+    "Material %@ · labour %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Material %1$@ · Lohn %2$@"
+          }
+        }
+      }
+    },
+    "Material (net)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Material (netto)"
+          }
+        }
+      }
+    },
+    "Material List": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Materialliste"
+          }
+        }
+      }
+    },
+    "Material order – %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Materialbestellung – %@"
+          }
+        }
+      }
+    },
+    "Material per %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Material je %@"
+          }
+        }
+      }
+    },
+    "Material purchase": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Materialeinkauf"
+          }
+        }
+      }
+    },
+    "Material purchase cost": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Materialeinkauf gesamt"
+          }
+        }
+      }
+    },
+    "Measure": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messen"
+          }
+        }
+      }
+    },
+    "Measure Window Depth": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fenstertiefe messen"
+          }
+        }
+      }
+    },
+    "Measure with laser meter": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit Laser messen"
+          }
+        }
+      }
+    },
+    "Measured depth: %@ m": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemessene Tiefe: %@ m"
+          }
+        }
+      }
+    },
+    "Measurement Report": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufmaß"
+          }
+        }
+      }
+    },
+    "Measurement Report %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufmaß %@"
+          }
+        }
+      }
+    },
+    "Measurement Report (PDF)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufmaß (PDF)"
+          }
+        }
+      }
+    },
+    "Measurement type": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messart"
+          }
+        }
+      }
+    },
+    "Measurements": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufmaß"
+          }
+        }
+      }
+    },
+    "Measurements, jobs and quotes always sync. When device-only is on, USDZ room models never leave this device.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maße, Aufträge und Angebote werden immer synchronisiert. Ist „nur auf dem Gerät“ aktiv, verlassen die 3D-Raummodelle dieses Gerät nie."
+          }
+        }
+      }
+    },
+    "Measurements, selected services and the 3D model of this room are deleted. Issued quotes are not changed.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maße, gewählte Leistungen und das 3D-Modell dieses Raums werden gelöscht. Ausgestellte Angebote bleiben unverändert."
+          }
+        }
+      }
+    },
+    "Members": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitglieder"
+          }
+        }
+      }
+    },
+    "Moisture": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Feuchtigkeit"
+          }
+        }
+      }
+    },
+    "Monospaced": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Festbreite"
+          }
+        }
+      }
+    },
+    "More": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mehr"
+          }
+        }
+      }
+    },
+    "Mould": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schimmel"
+          }
+        }
+      }
+    },
+    "Move slowly and cover every wall, floor, ceiling, door, and window. Hold each surface in view so LiDAR can capture its shape and real color.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Langsam bewegen und jede Wand, Boden, Decke, Tür und jedes Fenster erfassen. Jede Fläche im Bild halten, damit LiDAR Form und echte Farbe erfassen kann."
+          }
+        }
+      }
+    },
+    "My Company": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meine Firma"
+          }
+        }
+      }
+    },
+    "Name": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        }
+      }
+    },
+    "Name, contact details, site address and 3D models of this job are deleted on the server and all devices (GDPR Art. 17). Quotes stay for commercial record-keeping. This cannot be undone.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name, Kontaktdaten, Baustellenadresse und 3D-Modelle dieses Auftrags werden auf dem Server und allen Geräten gelöscht (Art. 17 DSGVO). Angebote bleiben zur kaufmännischen Aufbewahrung erhalten. Dies kann nicht rückgängig gemacht werden."
+          }
+        }
+      }
+    },
+    "Net": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Netto"
+          }
+        }
+      }
+    },
+    "Net area": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettofläche"
+          }
+        }
+      }
+    },
+    "Net total": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summe netto"
+          }
+        }
+      }
+    },
+    "New Job": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neuer Auftrag"
+          }
+        }
+      }
+    },
+    "New Material": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neues Material"
+          }
+        }
+      }
+    },
+    "New Quote": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neues Angebot"
+          }
+        }
+      }
+    },
+    "New Work Report": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neuer Arbeitsnachweis"
+          }
+        }
+      }
+    },
+    "New item": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Position"
+          }
+        }
+      }
+    },
+    "Next attempt %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächster Versuch %@"
+          }
+        }
+      }
+    },
+    "Next invoice number": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächste Rechnungsnummer"
+          }
+        }
+      }
+    },
+    "Next provisional number": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächste vorläufige Nummer"
+          }
+        }
+      }
+    },
+    "No Jobs": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Aufträge"
+          }
+        }
+      }
+    },
+    "No Price Book": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Preisliste"
+          }
+        }
+      }
+    },
+    "No doors or windows on this wall": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Türen oder Fenster an dieser Wand"
+          }
+        }
+      }
+    },
+    "No invoices yet. Create one from an accepted quote.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch keine Rechnungen. Erstellen Sie eine aus einem angenommenen Angebot."
+          }
+        }
+      }
+    },
+    "No matching door or window was detected. Scan the complete frame and both sides, then try again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine passende Tür und kein passendes Fenster erkannt. Scannen Sie den ganzen Rahmen und beide Seiten und versuchen Sie es erneut."
+          }
+        }
+      }
+    },
+    "No opening deduction": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein Öffnungsabzug"
+          }
+        }
+      }
+    },
+    "No room": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein Raum"
+          }
+        }
+      }
+    },
+    "No.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nr."
+          }
+        }
+      }
+    },
+    "None": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keiner"
+          }
+        }
+      }
+    },
+    "Not Now": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht jetzt"
+          }
+        }
+      }
+    },
+    "Not assigned": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht zugeordnet"
+          }
+        }
+      }
+    },
+    "Not included": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht enthalten"
+          }
+        }
+      }
+    },
+    "Not signed in – working locally": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht angemeldet – lokales Arbeiten"
+          }
+        }
+      }
+    },
+    "Nothing Scheduled": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nichts geplant"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "Offline – changes are saved on this device": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline – Änderungen werden auf diesem Gerät gespeichert"
+          }
+        }
+      }
+    },
+    "Only accepted quotes can be invoiced.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur angenommene Angebote können abgerechnet werden."
+          }
+        }
+      }
+    },
+    "Only this window": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur dieses Fenster"
+          }
+        }
+      }
+    },
+    "Open": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offen"
+          }
+        }
+      }
+    },
+    "Open invitations": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offene Einladungen"
+          }
+        }
+      }
+    },
+    "Opening": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnung"
+          }
+        }
+      }
+    },
+    "Openings": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnungen"
+          }
+        }
+      }
+    },
+    "Openings %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnungen %@"
+          }
+        }
+      }
+    },
+    "Openings (doors, windows)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnungen (Türen, Fenster)"
+          }
+        }
+      }
+    },
+    "Openings > %@ m² deducted": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnungen > %@ m² abgezogen"
+          }
+        }
+      }
+    },
+    "Openings area": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnungsfläche"
+          }
+        }
+      }
+    },
+    "Openings in this wall": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnungen in dieser Wand"
+          }
+        }
+      }
+    },
+    "Openings: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnungen: %@"
+          }
+        }
+      }
+    },
+    "Order confirmation": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auftragserteilung"
+          }
+        }
+      }
+    },
+    "Ordered": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beauftragt"
+          }
+        }
+      }
+    },
+    "Ordered, not scheduled": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beauftragt, noch nicht geplant"
+          }
+        }
+      }
+    },
+    "Other damage": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonstiger Schaden"
+          }
+        }
+      }
+    },
+    "Overdue": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Überfällig"
+          }
+        }
+      }
+    },
+    "Override floor area": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bodenfläche überschreiben"
+          }
+        }
+      }
+    },
+    "Owner": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inhaber"
+          }
+        }
+      }
+    },
+    "PDF Design": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF-Gestaltung"
+          }
+        }
+      }
+    },
+    "PDF Not Available": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF nicht verfügbar"
+          }
+        }
+      }
+    },
+    "PROVISIONAL NUMBER – the official quote number is assigned on the next sync.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VORLÄUFIGE NUMMER – die offizielle Angebotsnummer wird bei der nächsten Synchronisierung vergeben."
+          }
+        }
+      }
+    },
+    "Pack": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebinde"
+          }
+        }
+      }
+    },
+    "Pack name, e.g. Bucket 12.5 l": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebinde, z. B. Eimer 12,5 l"
+          }
+        }
+      }
+    },
+    "Page %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seite %lld"
+          }
+        }
+      }
+    },
+    "Page %lld of %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seite %1$lld von %2$lld"
+          }
+        }
+      }
+    },
+    "Paid": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bezahlt"
+          }
+        }
+      }
+    },
+    "Paid on %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bezahlt am %@"
+          }
+        }
+      }
+    },
+    "Payable by %@ without deduction.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zahlbar bis %@ ohne Abzug."
+          }
+        }
+      }
+    },
+    "Payment due in %lld days": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zahlungsziel %lld Tage"
+          }
+        }
+      }
+    },
+    "Payment terms": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zahlungsbedingungen"
+          }
+        }
+      }
+    },
+    "Payment terms: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zahlungsbedingungen: %@"
+          }
+        }
+      }
+    },
+    "Per": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je"
+          }
+        }
+      }
+    },
+    "Per %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je %@"
+          }
+        }
+      }
+    },
+    "Per door": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je Tür"
+          }
+        }
+      }
+    },
+    "Per window": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je Fenster"
+          }
+        }
+      }
+    },
+    "Perimeter": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umfang"
+          }
+        }
+      }
+    },
+    "Perimeter %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umfang %@"
+          }
+        }
+      }
+    },
+    "Phone": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefon"
+          }
+        }
+      }
+    },
+    "Photo %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto %lld"
+          }
+        }
+      }
+    },
+    "Photo documentation (%lld)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotodokumentation (%lld)"
+          }
+        }
+      }
+    },
+    "Photograph Wall %lld of %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wand %1$lld von %2$lld fotografieren"
+          }
+        }
+      }
+    },
+    "Photograph cracks, moisture or mould before work starts. The photos appear in the measurement report.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotografieren Sie Risse, Feuchtigkeit oder Schimmel vor Arbeitsbeginn. Die Fotos erscheinen im Aufmaß."
+          }
+        }
+      }
+    },
+    "Photograph each wall or area you worked on and add a short caption.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotografieren Sie jede bearbeitete Wand oder Fläche und ergänzen Sie eine kurze Beschriftung."
+          }
+        }
+      }
+    },
+    "Photograph the finished work, then the worker signs. The signed report is sent as a PDF with your company design.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotografieren Sie die fertige Arbeit, danach unterschreibt der Mitarbeiter. Der unterschriebene Bericht wird als PDF in Ihrem Firmendesign versendet."
+          }
+        }
+      }
+    },
+    "Photos (%lld)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotos (%lld)"
+          }
+        }
+      }
+    },
+    "Photos per row": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotos pro Zeile"
+          }
+        }
+      }
+    },
+    "Planning": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planung"
+          }
+        }
+      }
+    },
+    "Planning is stored on this device.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Planung wird auf diesem Gerät gespeichert."
+          }
+        }
+      }
+    },
+    "Planning notes": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planungsnotizen"
+          }
+        }
+      }
+    },
+    "Please pay the gross total by %@ without deduction, quoting invoice number %@.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitte überweisen Sie den Gesamtbetrag bis %1$@ ohne Abzug unter Angabe der Rechnungsnummer %2$@."
+          }
+        }
+      }
+    },
+    "Please sign in to sync.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitte zum Synchronisieren anmelden."
+          }
+        }
+      }
+    },
+    "Points": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Punkte"
+          }
+        }
+      }
+    },
+    "Pos.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pos."
+          }
+        }
+      }
+    },
+    "Position from wall start": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abstand vom Wandanfang"
+          }
+        }
+      }
+    },
+    "Preview PDF": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF-Vorschau"
+          }
+        }
+      }
+    },
+    "Preview Work Report": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorschau Arbeitsnachweis"
+          }
+        }
+      }
+    },
+    "Price": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preis"
+          }
+        }
+      }
+    },
+    "Price Book": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preisliste"
+          }
+        }
+      }
+    },
+    "Price book": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preisliste"
+          }
+        }
+      }
+    },
+    "Price book “%@” v%lld · calculation engine %@ · SHA-256 fingerprint of the calculation %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preisliste „%1$@“ v%2$lld · Rechenkern %3$@ · SHA-256-Prüfsumme der Kalkulation %4$@"
+          }
+        }
+      }
+    },
+    "Price per %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preis je %@"
+          }
+        }
+      }
+    },
+    "Prices are visible to the owner and admins.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preise sehen nur Inhaber und Admins."
+          }
+        }
+      }
+    },
+    "Printed on quotes": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auf Angeboten gedruckt"
+          }
+        }
+      }
+    },
+    "Privacy": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datenschutz"
+          }
+        }
+      }
+    },
+    "Privacy & storage": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datenschutz & Speicherung"
+          }
+        }
+      }
+    },
+    "Privacy Notice": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datenschutzhinweis"
+          }
+        }
+      }
+    },
+    "Privacy notice": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datenschutzhinweis"
+          }
+        }
+      }
+    },
+    "Privacy notice shown %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datenschutzhinweis gezeigt %@"
+          }
+        }
+      }
+    },
+    "Privacy notice: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datenschutzhinweis: %@"
+          }
+        }
+      }
+    },
+    "Processing opening…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnung wird verarbeitet …"
+          }
+        }
+      }
+    },
+    "Processing scan…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan wird verarbeitet …"
+          }
+        }
+      }
+    },
+    "Profit (quote %@)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ertrag (Angebot %@)"
+          }
+        }
+      }
+    },
+    "Project": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bauvorhaben"
+          }
+        }
+      }
+    },
+    "Project: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bauvorhaben: %@"
+          }
+        }
+      }
+    },
+    "Proof of Work": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arbeitsnachweis"
+          }
+        }
+      }
+    },
+    "Provisional": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorläufig"
+          }
+        }
+      }
+    },
+    "Provisional number – the official number is assigned on the next sync.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorläufige Nummer – die offizielle Nummer wird bei der nächsten Synchronisierung vergeben."
+          }
+        }
+      }
+    },
+    "Publish Company Settings": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmeneinstellungen veröffentlichen"
+          }
+        }
+      }
+    },
+    "Publish New Version": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Version veröffentlichen"
+          }
+        }
+      }
+    },
+    "Published versions never change. Existing quotes keep the prices they were issued with.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veröffentlichte Versionen ändern sich nie. Bestehende Angebote behalten ihre Preise."
+          }
+        }
+      }
+    },
+    "Published. All devices receive the new prices on their next sync.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veröffentlicht. Alle Geräte erhalten die neuen Preise bei der nächsten Synchronisierung."
+          }
+        }
+      }
+    },
+    "Publishing needs an internet connection.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zum Veröffentlichen ist eine Internetverbindung nötig."
+          }
+        }
+      }
+    },
+    "Publishing…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veröffentliche …"
+          }
+        }
+      }
+    },
+    "Purchase price per pack": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einkaufspreis je Gebinde"
+          }
+        }
+      }
+    },
+    "Quantity": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menge"
+          }
+        }
+      }
+    },
+    "Quote": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angebot"
+          }
+        }
+      }
+    },
+    "Quote %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angebot %@"
+          }
+        }
+      }
+    },
+    "Quote %@ – %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angebot %1$@ – %2$@"
+          }
+        }
+      }
+    },
+    "Quote number prefix": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Präfix der Angebotsnummer"
+          }
+        }
+      }
+    },
+    "Quote sent": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angebot versendet"
+          }
+        }
+      }
+    },
+    "Quote status": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angebotsstatus"
+          }
+        }
+      }
+    },
+    "Quotes": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angebote"
+          }
+        }
+      }
+    },
+    "Quotes valid for %lld days": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angebote gültig für %lld Tage"
+          }
+        }
+      }
+    },
+    "Raw Mesh": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gitternetz"
+          }
+        }
+      }
+    },
+    "Real 3D": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Echt-3D"
+          }
+        }
+      }
+    },
+    "Rectangular room": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechteckiger Raum"
+          }
+        }
+      }
+    },
+    "Redraw": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neu zeichnen"
+          }
+        }
+      }
+    },
+    "Rejected": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abgelehnt"
+          }
+        }
+      }
+    },
+    "Remove": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entfernen"
+          }
+        }
+      }
+    },
+    "Remove %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ entfernen"
+          }
+        }
+      }
+    },
+    "Remove Logo": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo entfernen"
+          }
+        }
+      }
+    },
+    "Remove member?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitglied entfernen?"
+          }
+        }
+      }
+    },
+    "Rescan Door": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tür neu scannen"
+          }
+        }
+      }
+    },
+    "Rescan Opening": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnung neu scannen"
+          }
+        }
+      }
+    },
+    "Rescan Room": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raum neu scannen"
+          }
+        }
+      }
+    },
+    "Rescan Window": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fenster neu scannen"
+          }
+        }
+      }
+    },
+    "Rescan this door": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Tür neu scannen"
+          }
+        }
+      }
+    },
+    "Rescan this opening": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Öffnung neu scannen"
+          }
+        }
+      }
+    },
+    "Rescan this window": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Fenster neu scannen"
+          }
+        }
+      }
+    },
+    "Rescanning replaces the measurements and 3D model. Name and selected services stay.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein neuer Scan ersetzt Maße und 3D-Modell. Name und gewählte Leistungen bleiben erhalten."
+          }
+        }
+      }
+    },
+    "Resend Code": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code erneut senden"
+          }
+        }
+      }
+    },
+    "Resend Code (%lld s)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code erneut senden (%lld s)"
+          }
+        }
+      }
+    },
+    "Reset Colour": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Farbe zurücksetzen"
+          }
+        }
+      }
+    },
+    "Reset to Defaults": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auf Standardwerte zurücksetzen"
+          }
+        }
+      }
+    },
+    "Retake Photo": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto neu aufnehmen"
+          }
+        }
+      }
+    },
+    "Retry": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erneut versuchen"
+          }
+        }
+      }
+    },
+    "Reveal depth": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laibungstiefe"
+          }
+        }
+      }
+    },
+    "Reveal length": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laibungslänge"
+          }
+        }
+      }
+    },
+    "Reveal plastering": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laibungen verputzen"
+          }
+        }
+      }
+    },
+    "Revenue (net)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umsatz (netto)"
+          }
+        }
+      }
+    },
+    "Revenue account": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erlöskonto"
+          }
+        }
+      }
+    },
+    "Revision %lld · %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revision %1$lld · %2$@"
+          }
+        }
+      }
+    },
+    "Revoke": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Widerrufen"
+          }
+        }
+      }
+    },
+    "Right": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechts"
+          }
+        }
+      }
+    },
+    "Role": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rolle"
+          }
+        }
+      }
+    },
+    "Room": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raum"
+          }
+        }
+      }
+    },
+    "Room %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raum %lld"
+          }
+        }
+      }
+    },
+    "Room LiDAR": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raum-LiDAR"
+          }
+        }
+      }
+    },
+    "Room height": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raumhöhe"
+          }
+        }
+      }
+    },
+    "Room name": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raumname"
+          }
+        }
+      }
+    },
+    "Rooms": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Räume"
+          }
+        }
+      }
+    },
+    "Rounded": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abgerundet"
+          }
+        }
+      }
+    },
+    "SAMPLE": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MUSTER"
+          }
+        }
+      }
+    },
+    "SAMPLE – NOT A VALID QUOTE": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MUSTER – KEIN GÜLTIGES ANGEBOT"
+          }
+        }
+      }
+    },
+    "SHA-256 fingerprint of photos, texts and signature at signing: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SHA-256-Prüfsumme von Fotos, Texten und Unterschrift bei Unterzeichnung: %@"
+          }
+        }
+      }
+    },
+    "Sample": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muster"
+          }
+        }
+      }
+    },
+    "Sample Preview": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mustervorschau"
+          }
+        }
+      }
+    },
+    "Sample price book": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muster-Preisliste"
+          }
+        }
+      }
+    },
+    "Sample price book. Your firm's price book replaces it after the first sync.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muster-Preisliste. Nach der ersten Synchronisierung wird sie durch die Preisliste Ihrer Firma ersetzt."
+          }
+        }
+      }
+    },
+    "Sample prices": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Musterpreise"
+          }
+        }
+      }
+    },
+    "Sample prices – sign in and sync to issue real quotes.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Musterpreise – zum Ausstellen echter Angebote anmelden und synchronisieren."
+          }
+        }
+      }
+    },
+    "Sample project": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Musterprojekt"
+          }
+        }
+      }
+    },
+    "Save": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sichern"
+          }
+        }
+      }
+    },
+    "Save as window depth": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Als Fenstertiefe sichern"
+          }
+        }
+      }
+    },
+    "Save manual depth": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manuelle Tiefe sichern"
+          }
+        }
+      }
+    },
+    "Scaffold area": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerüstfläche"
+          }
+        }
+      }
+    },
+    "Scaffold area %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerüstfläche %@"
+          }
+        }
+      }
+    },
+    "Scan Room with LiDAR": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raum mit LiDAR scannen"
+          }
+        }
+      }
+    },
+    "Scan coverage": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan-Abdeckung"
+          }
+        }
+      }
+    },
+    "Scan failed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan fehlgeschlagen"
+          }
+        }
+      }
+    },
+    "Schedule": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminplan"
+          }
+        }
+      }
+    },
+    "Scheduled": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminiert"
+          }
+        }
+      }
+    },
+    "Searching… Switch the laser meter on and enable its Bluetooth.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suche … Schalten Sie den Laser-Entfernungsmesser und sein Bluetooth ein."
+          }
+        }
+      }
+    },
+    "Select services & materials for each room first.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wählen Sie zuerst Leistungen & Material für jeden Raum."
+          }
+        }
+      }
+    },
+    "Send Code": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code senden"
+          }
+        }
+      }
+    },
+    "Send Invitation": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einladung senden"
+          }
+        }
+      }
+    },
+    "Send by E-mail": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per E-Mail senden"
+          }
+        }
+      }
+    },
+    "Sends these settings to all devices of your company on the next sync.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Überträgt diese Einstellungen bei der nächsten Synchronisierung an alle Geräte Ihrer Firma."
+          }
+        }
+      }
+    },
+    "Sent": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versendet"
+          }
+        }
+      }
+    },
+    "Separate material and labour": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Material und Lohn getrennt"
+          }
+        }
+      }
+    },
+    "Serif": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serifen"
+          }
+        }
+      }
+    },
+    "Services & Materials": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leistungen & Material"
+          }
+        }
+      }
+    },
+    "Services & Materials (%lld)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leistungen & Material (%lld)"
+          }
+        }
+      }
+    },
+    "Services according to quote %@. Dimensions as per measurement report.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leistungen gemäß Angebot %@. Maße laut Aufmaß."
+          }
+        }
+      }
+    },
+    "Set start dates in a job's planning section.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tragen Sie Starttermine im Planungsbereich eines Auftrags ein."
+          }
+        }
+      }
+    },
+    "Settings": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einstellungen"
+          }
+        }
+      }
+    },
+    "Share Company Export": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmenexport teilen"
+          }
+        }
+      }
+    },
+    "Share DATEV File": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DATEV-Datei teilen"
+          }
+        }
+      }
+    },
+    "Share Order List": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bestellliste teilen"
+          }
+        }
+      }
+    },
+    "Show Invoice %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechnung %@ anzeigen"
+          }
+        }
+      }
+    },
+    "Show Privacy Notice to Client": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datenschutzhinweis dem Kunden zeigen"
+          }
+        }
+      }
+    },
+    "Sign": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unterschreiben"
+          }
+        }
+      }
+    },
+    "Sign & Complete": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unterschreiben & abschließen"
+          }
+        }
+      }
+    },
+    "Sign In": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anmelden"
+          }
+        }
+      }
+    },
+    "Sign Out": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abmelden"
+          }
+        }
+      }
+    },
+    "Sign Out Anyway": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trotzdem abmelden"
+          }
+        }
+      }
+    },
+    "Sign Report": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bericht unterschreiben"
+          }
+        }
+      }
+    },
+    "Sign in with your work email to continue.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melden Sie sich mit Ihrer Firmen-E-Mail an, um fortzufahren."
+          }
+        }
+      }
+    },
+    "Sign out?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abmelden?"
+          }
+        }
+      }
+    },
+    "Sign-in by email is switched off on the server.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Anmeldung per E-Mail ist auf dem Server ausgeschaltet."
+          }
+        }
+      }
+    },
+    "Signature": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unterschrift"
+          }
+        }
+      }
+    },
+    "Signed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unterschrieben"
+          }
+        }
+      }
+    },
+    "Signed by %@ · %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unterschrieben von %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "Signed in": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angemeldet"
+          }
+        }
+      }
+    },
+    "Signed reports are locked and can no longer be changed.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unterschriebene Berichte sind gesperrt und können nicht mehr geändert werden."
+          }
+        }
+      }
+    },
+    "Site": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baustelle"
+          }
+        }
+      }
+    },
+    "Site address": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baustellenadresse"
+          }
+        }
+      }
+    },
+    "Site setup & covering": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baustelleneinrichtung & Abdeckarbeiten"
+          }
+        }
+      }
+    },
+    "Site: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baustelle: %@"
+          }
+        }
+      }
+    },
+    "Skirting board": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sockelleiste"
+          }
+        }
+      }
+    },
+    "Skirting length": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sockellänge"
+          }
+        }
+      }
+    },
+    "Source": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quelle"
+          }
+        }
+      }
+    },
+    "Stage": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        }
+      }
+    },
+    "Stand facing the wall, keep the iPad level, and include the complete wall, doors, and windows. The photo becomes the wall surface in the 3D model.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stellen Sie sich vor die Wand, halten Sie das iPad gerade und erfassen Sie die ganze Wand mit Türen und Fenstern. Das Foto wird zur Wandoberfläche im 3D-Modell."
+          }
+        }
+      }
+    },
+    "Standard": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard"
+          }
+        }
+      }
+    },
+    "Standard sizes are used (door 0.885 × 2.01 m, window 1.20 × 1.30 m). Adjust them in the plan editor.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Es werden Standardmaße verwendet (Tür 0,885 × 2,01 m, Fenster 1,20 × 1,30 m). Passen Sie sie im Grundriss-Editor an."
+          }
+        }
+      }
+    },
+    "Start": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beginn"
+          }
+        }
+      }
+    },
+    "Start Scan": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan starten"
+          }
+        }
+      }
+    },
+    "Stop measuring": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messen beenden"
+          }
+        }
+      }
+    },
+    "Style": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stil"
+          }
+        }
+      }
+    },
+    "Sum of the packs with a purchase price. Enter purchase prices by tapping a material.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summe der Gebinde mit Einkaufspreis. Einkaufspreise durch Tippen auf ein Material eingeben."
+          }
+        }
+      }
+    },
+    "Supabase is not configured (SUPABASE_URL / SUPABASE_ANON_KEY).": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supabase ist nicht konfiguriert (SUPABASE_URL / SUPABASE_ANON_KEY)."
+          }
+        }
+      }
+    },
+    "Supabase is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY in the target's Info settings. The app works fully offline meanwhile.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supabase ist nicht konfiguriert. Setzen Sie SUPABASE_URL und SUPABASE_ANON_KEY in den Info-Einstellungen des Targets. Bis dahin arbeitet die App vollständig offline."
+          }
+        }
+      }
+    },
+    "Superseded": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ersetzt"
+          }
+        }
+      }
+    },
+    "Supported: Bosch GLM (e.g. GLM 50 C, 100 C, 120 C) and Leica DISTO with Bluetooth.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unterstützt: Bosch GLM (z. B. GLM 50 C, 100 C, 120 C) und Leica DISTO mit Bluetooth."
+          }
+        }
+      }
+    },
+    "Survey": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufmaß"
+          }
+        }
+      }
+    },
+    "Sync Now": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jetzt synchronisieren"
+          }
+        }
+      }
+    },
+    "Sync failed: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synchronisierung fehlgeschlagen: %@"
+          }
+        }
+      }
+    },
+    "Sync to download your firm's price book.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synchronisieren Sie, um die Preisliste Ihrer Firma zu laden."
+          }
+        }
+      }
+    },
+    "Synced": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synchronisiert"
+          }
+        }
+      }
+    },
+    "Syncing…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synchronisiere …"
+          }
+        }
+      }
+    },
+    "Take Photo": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto aufnehmen"
+          }
+        }
+      }
+    },
+    "Take Wall Photo": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wandfoto aufnehmen"
+          }
+        }
+      }
+    },
+    "Take at least one photo first.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitte zuerst mindestens ein Foto aufnehmen."
+          }
+        }
+      }
+    },
+    "Take at least one photo of the finished work.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitte mindestens ein Foto der fertigen Arbeit aufnehmen."
+          }
+        }
+      }
+    },
+    "Tap a wall in the plan to edit its length, height and openings.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippen Sie im Grundriss auf eine Wand, um Länge, Höhe und Öffnungen zu bearbeiten."
+          }
+        }
+      }
+    },
+    "Tap a wall to edit it": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zum Bearbeiten auf eine Wand tippen"
+          }
+        }
+      }
+    },
+    "Tap a wall to measure it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippen Sie auf eine Wand, um sie zu messen."
+          }
+        }
+      }
+    },
+    "Tap the first point": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ersten Punkt antippen"
+          }
+        }
+      }
+    },
+    "Tap the laser button, then press the measure button on the device. Without height, the room height is used.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippen Sie auf die Laser-Taste und drücken Sie dann die Messtaste am Gerät. Ohne eigene Höhe gilt die Raumhöhe."
+          }
+        }
+      }
+    },
+    "Tap two points. Horizontal and Height lock automatically to the correct axis.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippen Sie zwei Punkte an. Horizontal und Höhe rasten automatisch in der richtigen Achse ein."
+          }
+        }
+      }
+    },
+    "Tax no. %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Steuernr. %@"
+          }
+        }
+      }
+    },
+    "Tax number (Steuernummer)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Steuernummer"
+          }
+        }
+      }
+    },
+    "Team": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Team"
+          }
+        }
+      }
+    },
+    "Team management needs an internet connection.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Teamverwaltung benötigt eine Internetverbindung."
+          }
+        }
+      }
+    },
+    "Team, price book and export need an internet connection.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Team, Preisliste und Export benötigen eine Internetverbindung."
+          }
+        }
+      }
+    },
+    "Texts on every PDF": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texte auf jedem PDF"
+          }
+        }
+      }
+    },
+    "Thank you for your inquiry. Attached you will find our quote %@ for “%@” and the measurement report.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "vielen Dank für Ihre Anfrage. Anbei erhalten Sie unser Angebot %1$@ für „%2$@“ und das Aufmaß."
+          }
+        }
+      }
+    },
+    "Thank you for your order.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vielen Dank für Ihren Auftrag."
+          }
+        }
+      }
+    },
+    "The client must be informed before their home is scanned.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Kunde muss informiert werden, bevor seine Räume gescannt werden."
+          }
+        }
+      }
+    },
+    "The code is wrong or has expired. Only the newest code works – tap Resend Code.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Code ist falsch oder abgelaufen. Nur der neueste Code gilt – tippen Sie auf „Code erneut senden“."
+          }
+        }
+      }
+    },
+    "The design applies to quotes and work reports created on this device.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Gestaltung gilt für Angebote und Arbeitsnachweise, die auf diesem Gerät erstellt werden."
+          }
+        }
+      }
+    },
+    "The drawing is too small. Draw a larger outline with at least three walls.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Zeichnung ist zu klein. Zeichnen Sie einen größeren Umriss mit mindestens drei Wänden."
+          }
+        }
+      }
+    },
+    "The model file is not on this device.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Modelldatei befindet sich nicht auf diesem Gerät."
+          }
+        }
+      }
+    },
+    "The photo could not be saved.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Foto konnte nicht gespeichert werden."
+          }
+        }
+      }
+    },
+    "The photos were erased at the client's request.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Fotos wurden auf Wunsch des Kunden gelöscht."
+          }
+        }
+      }
+    },
+    "The scan saw through the glass and could not isolate a solid reveal. The previous measurement was not changed. Scan both side surfaces more slowly and try again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Scan hat durch das Glas gesehen und keine feste Laibung erkannt. Die bisherige Messung bleibt unverändert. Scannen Sie beide Seitenflächen langsamer und versuchen Sie es erneut."
+          }
+        }
+      }
+    },
+    "The server could not check the invitation. Please try again later.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Server konnte die Einladung nicht prüfen. Bitte später erneut versuchen."
+          }
+        }
+      }
+    },
+    "The worker must sign.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Mitarbeiter muss unterschreiben."
+          }
+        }
+      }
+    },
+    "Their access ends immediately on all devices.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Zugriff endet sofort auf allen Geräten."
+          }
+        }
+      }
+    },
+    "This account does not belong to a company yet. Ask your company's Owner or Admin to invite this email address.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Konto gehört noch zu keiner Firma. Bitten Sie den Inhaber oder Admin Ihrer Firma, diese E-Mail-Adresse einzuladen."
+          }
+        }
+      }
+    },
+    "This device has no LiDAR scanner. Enter rooms manually or use an iPhone Pro / iPad Pro.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Gerät hat keinen LiDAR-Scanner. Erfassen Sie Räume manuell oder verwenden Sie ein iPhone Pro / iPad Pro."
+          }
+        }
+      }
+    },
+    "This email address is not valid.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese E-Mail-Adresse ist ungültig."
+          }
+        }
+      }
+    },
+    "This job already has a room named “%@”.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Auftrag hat bereits einen Raum „%@“."
+          }
+        }
+      }
+    },
+    "This quote can no longer be accepted.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Angebot kann nicht mehr angenommen werden."
+          }
+        }
+      }
+    },
+    "This report is signed and can no longer be changed.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Bericht ist unterschrieben und kann nicht mehr geändert werden."
+          }
+        }
+      }
+    },
+    "Threshold (m²)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schwellenwert (m²)"
+          }
+        }
+      }
+    },
+    "Title": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titel"
+          }
+        }
+      }
+    },
+    "To": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bis"
+          }
+        }
+      }
+    },
+    "To prepare your quote we measure the rooms with a LiDAR scanner and a laser distance meter. We store room dimensions, a 3D model of the room, photos of existing damage and of the completed work, your name and contact details to create and manage the quote and the invoice. Controller: the company named on this quote. You have the right to access, rectify and erase your data.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für Ihr Angebot vermessen wir die Räume mit einem LiDAR-Scanner und einem Laser-Entfernungsmesser. Wir speichern Raummaße, ein 3D-Modell des Raums, Fotos vorhandener Schäden und der fertigen Arbeit sowie Ihren Namen und Ihre Kontaktdaten, um Angebot und Rechnung zu erstellen und zu verwalten. Verantwortlich ist die auf dem Angebot genannte Firma. Sie haben das Recht auf Auskunft, Berichtigung und Löschung Ihrer Daten."
+          }
+        }
+      }
+    },
+    "Too many codes requested. Please wait a few minutes and try again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zu viele Codes angefordert. Bitte einige Minuten warten und erneut versuchen."
+          }
+        }
+      }
+    },
+    "Total": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesamt"
+          }
+        }
+      }
+    },
+    "Totals": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summen"
+          }
+        }
+      }
+    },
+    "Type": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Art"
+          }
+        }
+      }
+    },
+    "Typical consumption values incl. waste. Check them against the data sheets of the products you use.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Typische Verbrauchswerte inkl. Verschnitt. Bitte mit den technischen Merkblättern Ihrer Produkte abgleichen."
+          }
+        }
+      }
+    },
+    "Unassigned openings (%lld)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht zugeordnete Öffnungen (%lld)"
+          }
+        }
+      }
+    },
+    "Undo": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rückgängig"
+          }
+        }
+      }
+    },
+    "Unit": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einheit"
+          }
+        }
+      }
+    },
+    "Unit price": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einzelpreis"
+          }
+        }
+      }
+    },
+    "Unit prices, VAT and totals were checked by our server against this price book when the quote number was assigned.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einzelpreise, MwSt. und Summen wurden bei Vergabe der Angebotsnummer von unserem Server gegen diese Preisliste geprüft."
+          }
+        }
+      }
+    },
+    "Unlock": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entsperren"
+          }
+        }
+      }
+    },
+    "Unlock to access jobs and client data": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entsperren, um auf Aufträge und Kundendaten zuzugreifen"
+          }
+        }
+      }
+    },
+    "Upload to My Company": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In meine Firma hochladen"
+          }
+        }
+      }
+    },
+    "Use a Different Email": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Andere E-Mail verwenden"
+          }
+        }
+      }
+    },
+    "Use the same movement as the main scanner. Capture the complete frame, the surrounding wall, and both solid sides. Avoid aiming only at glass.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewegen Sie das Gerät wie beim Raumscan. Erfassen Sie den ganzen Rahmen, die umgebende Wand und beide festen Seiten. Nicht nur auf das Glas zielen."
+          }
+        }
+      }
+    },
+    "Used for": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwendet für"
+          }
+        }
+      }
+    },
+    "VAT": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MwSt."
+          }
+        }
+      }
+    },
+    "VAT %@ %%": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MwSt. %@ %%"
+          }
+        }
+      }
+    },
+    "VAT ID %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "USt-IdNr. %@"
+          }
+        }
+      }
+    },
+    "VAT ID (USt-IdNr.)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "USt-IdNr."
+          }
+        }
+      }
+    },
+    "VAT ID or tax number": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "USt-IdNr. oder Steuernummer"
+          }
+        }
+      }
+    },
+    "Valid until %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gültig bis %@"
+          }
+        }
+      }
+    },
+    "Verify Code": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code bestätigen"
+          }
+        }
+      }
+    },
+    "Version %lld is active again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %lld ist wieder aktiv."
+          }
+        }
+      }
+    },
+    "Versions": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versionen"
+          }
+        }
+      }
+    },
+    "View & Send PDF": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF ansehen & senden"
+          }
+        }
+      }
+    },
+    "View 3D Model": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D-Modell ansehen"
+          }
+        }
+      }
+    },
+    "View this wall in 3D": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Wand in 3D ansehen"
+          }
+        }
+      }
+    },
+    "Waiting for its job, which could not be synced.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wartet auf den zugehörigen Auftrag, der nicht synchronisiert werden konnte."
+          }
+        }
+      }
+    },
+    "Waiting for laser meter": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warte auf Laser-Entfernungsmesser"
+          }
+        }
+      }
+    },
+    "Waiting to sync (%lld)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wartet auf Synchronisierung (%lld)"
+          }
+        }
+      }
+    },
+    "Wall": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wand"
+          }
+        }
+      }
+    },
+    "Wall %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wand %lld"
+          }
+        }
+      }
+    },
+    "Wall %lld after the second coat": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wand %lld nach dem zweiten Anstrich"
+          }
+        }
+      }
+    },
+    "Wall %lld · %@ m × %@ m": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wand %1$lld · %2$@ m × %3$@ m"
+          }
+        }
+      }
+    },
+    "Wall + ceiling area": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wand- + Deckenfläche"
+          }
+        }
+      }
+    },
+    "Wall area": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wandfläche"
+          }
+        }
+      }
+    },
+    "Wall area (gross)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wandfläche (brutto)"
+          }
+        }
+      }
+    },
+    "Wall area (net)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wandfläche (netto)"
+          }
+        }
+      }
+    },
+    "Wall area (net, all openings)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wandfläche (netto, alle Öffnungen)"
+          }
+        }
+      }
+    },
+    "Wall area gross %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wandfläche brutto %@"
+          }
+        }
+      }
+    },
+    "Wall area net %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wandfläche netto %@"
+          }
+        }
+      }
+    },
+    "Wall length × (height + 1.00 m)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wandlänge × (Höhe + 1,00 m)"
+          }
+        }
+      }
+    },
+    "Wall name": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wandname"
+          }
+        }
+      }
+    },
+    "Wall painting, 2 coats": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wandanstrich, 2-fach"
+          }
+        }
+      }
+    },
+    "Walls": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wände"
+          }
+        }
+      }
+    },
+    "Walls measured: %lld of %lld · Facade %@ · Scaffold %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wände gemessen: %1$lld von %2$lld · Fassade %3$@ · Gerüst %4$@"
+          }
+        }
+      }
+    },
+    "Walls measured: %lld of %lld · Floor %@ · Walls %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wände gemessen: %1$lld von %2$lld · Boden %3$@ · Wände %4$@"
+          }
+        }
+      }
+    },
+    "Walls primed and painted with two coats. Furniture covered and site cleaned.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wände grundiert und zweifach gestrichen. Möbel abgedeckt und Baustelle gereinigt."
+          }
+        }
+      }
+    },
+    "Walls, doors and windows": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wände, Türen und Fenster"
+          }
+        }
+      }
+    },
+    "Waste": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verschnitt"
+          }
+        }
+      }
+    },
+    "Waste: %lld %%": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verschnitt: %lld %%"
+          }
+        }
+      }
+    },
+    "We would be pleased to receive your order. Please do not hesitate to contact us if you have any questions.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Über Ihren Auftrag würden wir uns freuen. Bei Fragen stehen wir Ihnen gerne zur Verfügung."
+          }
+        }
+      }
+    },
+    "Week %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KW %lld"
+          }
+        }
+      }
+    },
+    "Welcome": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Willkommen"
+          }
+        }
+      }
+    },
+    "Where should this measured depth be saved?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wo soll die gemessene Tiefe gespeichert werden?"
+          }
+        }
+      }
+    },
+    "White": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiß"
+          }
+        }
+      }
+    },
+    "Width": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Breite"
+          }
+        }
+      }
+    },
+    "Width × Height": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Breite × Höhe"
+          }
+        }
+      }
+    },
+    "Window": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fenster"
+          }
+        }
+      }
+    },
+    "Windows": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fenster"
+          }
+        }
+      }
+    },
+    "Windows: %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fenster: %lld"
+          }
+        }
+      }
+    },
+    "With separate prices, quotes and invoices show material and labour per line and the contained labour costs, which private clients can deduct from tax (§ 35a EStG).": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit getrennten Preisen zeigen Angebote und Rechnungen Material und Lohn je Position sowie die enthaltenen Arbeitskosten, die Privatkunden steuerlich absetzen können (§ 35a EStG)."
+          }
+        }
+      }
+    },
+    "With the signature the client accepts the quote and orders the listed services at the stated prices.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit der Unterschrift nimmt der Kunde das Angebot an und beauftragt die aufgeführten Leistungen zu den genannten Preisen."
+          }
+        }
+      }
+    },
+    "Work Completion Report": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arbeitsnachweis"
+          }
+        }
+      }
+    },
+    "Work carried out": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausgeführte Arbeiten"
+          }
+        }
+      }
+    },
+    "Work email": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmen-E-Mail"
+          }
+        }
+      }
+    },
+    "Work report": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arbeitsnachweis"
+          }
+        }
+      }
+    },
+    "Worker": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitarbeiter"
+          }
+        }
+      }
+    },
+    "Worker – signed on the device": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitarbeiter – auf dem Gerät unterschrieben"
+          }
+        }
+      }
+    },
+    "Your company's Owner or Admin must invite you first.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Inhaber oder Admin Ihrer Firma muss Sie zuerst einladen."
+          }
+        }
+      }
+    },
+    "incl. %lld %% waste": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "inkl. %lld %% Verschnitt"
+          }
+        }
+      }
+    },
+    "labour": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lohn"
+          }
+        }
+      }
+    },
+    "m": {},
+    "material": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Material"
+          }
+        }
+      }
+    },
+    "of which labour": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "davon Lohn"
+          }
+        }
+      }
+    },
+    "of which material": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "davon Material"
+          }
+        }
+      }
+    },
+    "reveals added": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laibungen hinzugerechnet"
+          }
+        }
+      }
+    },
+    "v%lld · %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "v%1$lld · %2$@"
+          }
+        }
+      }
+    },
+    "€": {}
+  },
+  "version": "1.0"
+}

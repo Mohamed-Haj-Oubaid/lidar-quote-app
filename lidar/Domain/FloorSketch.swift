@@ -20,6 +20,8 @@ nonisolated struct FloorSketch: Codable, Hashable {
 
     var walls: [Wall]
     var roomHeight: Double = 2.5
+    /// Exterior facade (building outline measured from outside) instead of a room.
+    var isFacade = false
 
     /// Corners closer than this (sketch points) to the stroke start close the outline.
     static let closeTolerance = 60.0
@@ -159,7 +161,8 @@ nonisolated struct FloorSketch: Codable, Hashable {
             }
         }
         return RoomMeasurement(walls: segments, openings: openings, floorPolygon: points,
-                               floorAreaOverride: nil, source: .manual, manuallyAdjusted: false)
+                               floorAreaOverride: nil, source: .manual, manuallyAdjusted: false,
+                               isFacade: isFacade ? true : nil)
     }
 
     // MARK: Helpers

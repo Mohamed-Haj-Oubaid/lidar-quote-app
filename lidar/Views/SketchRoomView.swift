@@ -27,6 +27,7 @@ struct SketchRoomView: View {
     @State private var isConnectingLaser = false
     @State private var roomName = ""
     @State private var nameError: String?
+    @State private var isFacade = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -44,6 +45,13 @@ struct SketchRoomView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbar }
         .onAppear { roomName = LocalStore.nextRoomName(for: job) }
+        .onChange(of: isFacade) { _, facade in
+            // Swap the suggested name only while the worker has not typed their own.
+            let roomDefault = LocalStore.nextRoomName(for: job)
+            let facadeDefault = LocalStore.nextFacadeName(for: job)
+            if facade, roomName == roomDefault { roomName = facadeDefault }
+            if !facade, roomName == facadeDefault { roomName = roomDefault }
+        }
         .onDisappear { laser.disconnect() }
         .onChange(of: laser.lastReading) { _, reading in
             if let reading { apply(reading.meters) }
@@ -90,8 +98,16 @@ struct SketchRoomView: View {
                     .onEnded { _ in finishStroke() }
             )
 
-            VStack(spacing: 4) {
-                Text("Draw the outline of the room or floor in one stroke with your finger or Apple Pencil.")
+            VStack(spacing: 8) {
+                Picker("Type", selection: $isFacade) {
+                    Label("Room", systemImage: "square.split.bottomrightquarter").tag(false)
+                    Label("Facade", systemImage: "building.2").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 320)
+                Text(isFacade
+                     ? LocalizedStringKey("Draw the outline of the building in one stroke. Each side becomes one facade wall.")
+                     : LocalizedStringKey("Draw the outline of the room or floor in one stroke with your finger or Apple Pencil."))
                 if let drawHint {
                     Text(drawHint).foregroundStyle(.red)
                 }
@@ -101,13 +117,14 @@ struct SketchRoomView: View {
             .padding(12)
             .background(.regularMaterial, in: .rect(cornerRadius: 12))
             .padding()
-            .allowsHitTesting(false)
         }
     }
 
     private func finishStroke() {
         let points = stroke.map { PlanPoint(x: Double($0.x), y: Double($0.y)) }
-        if let result = FloorSketch.fromStroke(points) {
+        if var result = FloorSketch.fromStroke(points) {
+            result.isFacade = isFacade
+            if isFacade { result.roomHeight = 6 }
             sketch = result
             drawHint = nil
         } else {
@@ -131,7 +148,7 @@ struct SketchRoomView: View {
                 Text(nameError).font(.caption).foregroundStyle(.red)
             }
             MeasureRow(
-                title: "Room height",
+                title: sketch.isFacade ? "Facade height" : "Room height",
                 value: Binding(
                     get: { self.sketch?.roomHeight },
                     set: { if let value = $0 { self.sketch?.roomHeight = value } }
@@ -140,7 +157,13 @@ struct SketchRoomView: View {
                 laserConnected: laser.isConnected,
                 onLaser: { toggle(.roomHeight) }
             )
-            Text("Walls measured: \(measured) of \(sketch.walls.count) · Floor \(Formatters.meters(measurement.floorArea, suffix: "m²")) · Walls \(Formatters.meters(measurement.grossWallArea, suffix: "m²"))")
+            Group {
+                if sketch.isFacade {
+                    Text("Walls measured: \(measured) of \(sketch.walls.count) · Facade \(Formatters.meters(measurement.grossWallArea, suffix: "m²")) · Scaffold \(Formatters.meters(measurement.scaffoldArea, suffix: "m²"))")
+                } else {
+                    Text("Walls measured: \(measured) of \(sketch.walls.count) · Floor \(Formatters.meters(measurement.floorArea, suffix: "m²")) · Walls \(Formatters.meters(measurement.grossWallArea, suffix: "m²"))")
+                }
+            }
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text("Tap a wall to measure it.")

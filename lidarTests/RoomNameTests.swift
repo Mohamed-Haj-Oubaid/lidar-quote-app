@@ -70,7 +70,7 @@ struct DuplicateRoomNameTests {
         #expect(calculation.lines.count == 2)
         #expect(Set(calculation.lines.map(\.id)).count == 2)
         #expect(calculation.lines.allSatisfy { $0.itemID == item.id })
-        #expect(calculation.engineVersion == "1.1.0")
+        #expect(calculation.engineVersion == EstimationEngine.version)
     }
 
     @Test func oldQuoteLinesWithoutIDsStillDecode() throws {
@@ -88,17 +88,17 @@ struct DuplicateRoomNameTests {
         let context = container.mainContext
         let job = Job(title: "Job")
         context.insert(job)
-        for name in ["Room 1", "Room 2", "Room 3"] {
+        for name in ["Raum 1", "Raum 2", "Raum 3"] {
             context.insert(Survey(roomName: name, measurement: .empty, job: job))
         }
         try context.save()
-        #expect(LocalStore.nextRoomName(for: job) == "Room 4")
+        #expect(LocalStore.nextRoomName(for: job) == "Raum 4")
 
-        let second = try #require(job.surveys.first { $0.roomName == "Room 2" })
+        let second = try #require(job.surveys.first { $0.roomName == "Raum 2" })
         context.delete(second)
         try context.save()
-        // Old behaviour produced "Room 3" here – a duplicate.
-        #expect(LocalStore.nextRoomName(for: job) == "Room 2")
-        #expect(throws: LocalStoreError.duplicateRoomName("room 3")) { try LocalStore.validatedRoomName("room 3", in: job) }
+        // Old behaviour produced "Raum 3" here – a duplicate.
+        #expect(LocalStore.nextRoomName(for: job) == "Raum 2")
+        #expect(throws: LocalStoreError.duplicateRoomName("raum 3")) { try LocalStore.validatedRoomName("raum 3", in: job) }
     }
 }

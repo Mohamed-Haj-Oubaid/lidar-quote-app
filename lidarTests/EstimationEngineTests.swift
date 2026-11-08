@@ -36,15 +36,15 @@ struct OpeningNoteTests {
         let (_, note) = EstimationEngine.netWallArea(Fixture.room(openings: [Fixture.door]), rule: rule)
         let text = try #require(note)
         #expect(!text.hasPrefix(","))
-        #expect(text.hasSuffix(", reveals added"))
+        #expect(text.hasSuffix(", Laibungen hinzugerechnet"))
         #expect(text.components(separatedBy: ", ").count == 2)
     }
 
     @Test func thresholdNoteWithoutDeductedOpeningsHasNoRevealPart() throws {
         let (_, note) = EstimationEngine.netWallArea(Fixture.room(openings: [Fixture.smallWindow]), rule: .vobPainting)
         let text = try #require(note)
-        #expect(text.contains("deducted"))
-        #expect(!text.contains("reveals"))
+        #expect(text.contains("abgezogen"))
+        #expect(!text.contains("Laibungen"))
     }
 }
 

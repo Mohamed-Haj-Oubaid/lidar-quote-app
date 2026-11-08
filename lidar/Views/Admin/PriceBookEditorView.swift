@@ -53,7 +53,9 @@ struct PriceBookEditorView: View {
                     } label: {
                         VStack(alignment: .leading) {
                             Text(item.name.isEmpty ? String(localized: "New item") : item.name)
-                            Text("\(item.code) · \(Formatters.money(item.unitPriceCents)) / \(item.unit.symbol) · \(item.basis.title)")
+                            Text(item.hasPriceSplit
+                                 ? "\(item.code) · \(Formatters.money(item.unitPriceCents)) / \(item.unit.symbol) (\(String(localized: "material")) \(Formatters.money(item.materialCents ?? 0)) + \(String(localized: "labour")) \(Formatters.money(item.laborCents ?? 0))) · \(item.basis.title)"
+                                 : "\(item.code) · \(Formatters.money(item.unitPriceCents)) / \(item.unit.symbol) · \(item.basis.title)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -160,14 +162,38 @@ private struct PriceItemEditor: View {
                         Text(basis.title).tag(basis)
                     }
                 }
-                LabeledContent("Price per \(item.unit.symbol)") {
-                    TextField("Price", value: euros, format: .number.precision(.fractionLength(2)))
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
-                        .frame(maxWidth: 120)
-                    Text("€").foregroundStyle(.secondary)
-                }
                 Stepper("Default waste: \(item.defaultWastePercent) %", value: $item.defaultWastePercent, in: 0...50, step: 5)
+            }
+            Section {
+                Toggle("Separate material and labour", isOn: Binding(
+                    get: { item.hasPriceSplit },
+                    set: { split in
+                        if split {
+                            item.setPriceSplit(material: 0, labor: item.unitPriceCents)
+                        } else {
+                            item.materialCents = nil
+                            item.laborCents = nil
+                        }
+                    }
+                ))
+                if item.hasPriceSplit {
+                    euroField("Material per \(item.unit.symbol)", cents: Binding(
+                        get: { item.materialCents ?? 0 },
+                        set: { item.setPriceSplit(material: $0, labor: item.laborCents ?? 0) }
+                    ))
+                    euroField("Labour per \(item.unit.symbol)", cents: Binding(
+                        get: { item.laborCents ?? 0 },
+                        set: { item.setPriceSplit(material: item.materialCents ?? 0, labor: $0) }
+                    ))
+                    LabeledContent("Price per \(item.unit.symbol)", value: Formatters.money(item.unitPriceCents))
+                        .bold()
+                } else {
+                    euroField("Price per \(item.unit.symbol)", cents: $item.unitPriceCents)
+                }
+            } header: {
+                Text("Price")
+            } footer: {
+                Text("With separate prices, quotes and invoices show material and labour per line and the contained labour costs, which private clients can deduct from tax (§ 35a EStG).")
             }
             if item.basis == .wallArea {
                 Section("Openings (doors, windows)") {
@@ -191,11 +217,17 @@ private struct PriceItemEditor: View {
         .navigationTitle(item.name.isEmpty ? String(localized: "New item") : item.name)
     }
 
-    private var euros: Binding<Decimal> {
-        Binding(
-            get: { Decimal(item.unitPriceCents) / 100 },
-            set: { item.unitPriceCents = ($0 * 100).roundedInt }
-        )
+    private func euroField(_ title: LocalizedStringKey, cents: Binding<Int>) -> some View {
+        LabeledContent(title) {
+            TextField(title, value: Binding(
+                get: { Decimal(cents.wrappedValue) / 100 },
+                set: { cents.wrappedValue = ($0 * 100).roundedInt }
+            ), format: .number.precision(.fractionLength(2)))
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: 120)
+            Text("€").foregroundStyle(.secondary)
+        }
     }
 }
 

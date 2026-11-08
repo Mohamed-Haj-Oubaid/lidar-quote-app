@@ -191,6 +191,26 @@ private struct FirmSettingsSection: View {
             Text("Logo, colours and layout of your quotes and work reports.")
         }
 
+        if canEdit {
+        Section {
+            NavigationLink {
+                InvoicesListView()
+            } label: {
+                Label("Invoices & DATEV Export", systemImage: "eurosign.circle")
+            }
+            TextField("Invoice number prefix", text: $settings.invoicePrefix)
+                .textInputAutocapitalization(.characters)
+            Stepper("Payment due in \(settings.invoiceDueDays) days", value: $settings.invoiceDueDays, in: 0...120)
+            LabeledContent("Next invoice number",
+                           value: String(format: "%@-%d-%@-%04d", settings.invoicePrefix, Calendar.current.component(.year, from: .now),
+                                         settings.deviceCode, settings.nextInvoiceSequence))
+        } header: {
+            Text("Invoices")
+        } footer: {
+            Text("For e-invoices (XRechnung) the company address must contain street, postal code and city, plus phone, e-mail and VAT ID or tax number.")
+        }
+        }
+
         Section {
             Toggle("Keep 3D models & photos on device only", isOn: $settings.mediaDeviceOnly)
                 .disabled(!canEdit)

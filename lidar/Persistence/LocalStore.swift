@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import UIKit
 
 /// Mutation kinds understood by the `push_mutations` RPC (see supabase/migrations).
 enum MutationKind: String {
@@ -125,9 +126,15 @@ enum LocalStoreError: LocalizedError, Equatable {
     case samplePriceBook
     case emptyRoomName
     case duplicateRoomName(String)
+    case quoteNotSignable
+    case missingSignature
+    case quoteNotAccepted
 
     var errorDescription: String? {
         switch self {
+        case .quoteNotSignable: String(localized: "This quote can no longer be accepted.")
+        case .missingSignature: String(localized: "Enter the client's name and let them sign.")
+        case .quoteNotAccepted: String(localized: "Only accepted quotes can be invoiced.")
         case .samplePriceBook: String(localized: "Sample prices – sign in and sync to issue real quotes.")
         case .emptyRoomName: String(localized: "Enter a room name.")
         case .duplicateRoomName(let name): String(localized: "This job already has a room named “\(name)”.")
@@ -202,6 +209,7 @@ enum LocalStore {
     static func save(survey: Survey, in context: ModelContext) throws {
         guard let job = survey.job else { return }
         survey.updatedAt = .now
+        advance(job, to: .survey)
         try enqueue(.upsertSurvey, SurveyPayload(
             id: survey.id, jobId: job.id, roomName: survey.roomName, measurement: survey.measurement,
             capturedAt: survey.capturedAt, updatedAt: survey.updatedAt, hasMedia: survey.usdzFileName != nil,
@@ -276,6 +284,67 @@ enum LocalStore {
         try context.save()
     }
 
+    /// The client signs the quote on the device: stores the signature, marks the
+    /// quote accepted (queued for the server), re-renders the PDF with the
+    /// order confirmation and moves the job to "Ordered".
+    static func signQuote(_ quote: Quote, signerName: String, signature: UIImage, in context: ModelContext) throws {
+        guard allowedStatusChanges(for: quote).contains("accepted") else { throw LocalStoreError.quoteNotSignable }
+        let name = signerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, let png = signature.pngData() else { throw LocalStoreError.missingSignature }
+        quote.clientSignerName = name
+        quote.clientSignaturePNG = png
+        try setStatus("accepted", of: quote, in: context)
+        if let job = quote.job {
+            quote.pdfData = PDFGenerator.render(quote: quote, job: job, settings: settings(in: context))
+            advance(job, to: .ordered)
+        }
+        try context.save()
+    }
+
+    /// After the quote was e-mailed: status "sent" (if still issued) and job stage "Quote sent".
+    static func markQuoteSent(_ quote: Quote, in context: ModelContext) throws {
+        if quote.status == "issued" { try setStatus("sent", of: quote, in: context) }
+        if let job = quote.job { advance(job, to: .quoted) }
+        try context.save()
+    }
+
+    /// Moves a job forward in the pipeline – never backwards.
+    static func advance(_ job: Job, to stage: JobStage) {
+        let order = JobStage.allCases
+        if let current = order.firstIndex(of: job.stage), let target = order.firstIndex(of: stage), target > current {
+            job.stage = stage
+        }
+    }
+
+    // MARK: - Invoices
+
+    /// Creates the invoice for an accepted quote with a never-repeating number
+    /// (prefix-year-device-sequence) and renders its PDF.
+    @discardableResult
+    static func createInvoice(from quote: Quote, serviceDate: Date, in context: ModelContext) throws -> Invoice {
+        guard quote.status == "accepted", let job = quote.job, let calculation = quote.calculation else {
+            throw LocalStoreError.quoteNotAccepted
+        }
+        let settings = settings(in: context)
+        let year = Calendar.current.component(.year, from: .now)
+        let prefix = settings.invoicePrefix.trimmingCharacters(in: .whitespaces).isEmpty ? "RE" : settings.invoicePrefix
+        let number = String(format: "%@-%d-%@-%04d", prefix, year, settings.deviceCode, settings.nextInvoiceSequence)
+        settings.nextInvoiceSequence += 1
+        let due = Calendar.current.date(byAdding: .day, value: max(settings.invoiceDueDays, 0), to: .now) ?? .now
+        let invoice = Invoice(number: number, serviceDate: serviceDate, dueDate: due, quote: quote, calculation: calculation, job: job)
+        context.insert(invoice)
+        invoice.pdfData = PDFGenerator.render(invoice: invoice, settings: settings)
+        advance(job, to: .invoiced)
+        try context.save()
+        return invoice
+    }
+
+    static func markPaid(_ invoice: Invoice, in context: ModelContext) throws {
+        invoice.paidAt = .now
+        if let job = invoice.job, job.invoices.allSatisfy(\.isPaid) { advance(job, to: .paid) }
+        try context.save()
+    }
+
     /// Applies an Art. 17 erasure locally (after the server erased it): client fields
     /// cleared, media files removed. No outbox entry – the server already has it.
     static func applyClientErasure(to job: Job, in context: ModelContext) throws {
@@ -293,6 +362,7 @@ enum LocalStore {
             survey.mediaUploaded = false
         }
         WorkProofStore.erasePhotos(of: job, in: context)
+        DamageStore.erasePhotos(of: job)
         try context.save()
     }
 
@@ -314,6 +384,12 @@ enum LocalStore {
             }
         }
         return String(localized: "Room \(number)")
+    }
+
+    /// First "Facade N" that is not taken in the job.
+    static func nextFacadeName(for job: Job) -> String {
+        let candidate = (1...(job.surveys.count + 1)).first { !isRoomName(String(localized: "Facade \($0)"), takenIn: job) } ?? 1
+        return String(localized: "Facade \(candidate)")
     }
 
     static func normalizedRoomName(_ name: String) -> String {
@@ -389,6 +465,7 @@ enum LocalStore {
     }
 
     private static func removeMedia(of survey: Survey) {
+        DamageStore.removeFiles(of: survey)
         let fileNames = [survey.usdzFileName, survey.photoPointCloudFileName].compactMap { $0 }
             + survey.wallTextureFileNames
         for fileName in fileNames {
@@ -417,6 +494,8 @@ enum LocalStore {
         for mutation in try context.fetch(FetchDescriptor<PendingMutation>()) { context.delete(mutation) }
         for proof in try context.fetch(FetchDescriptor<WorkProof>()) { context.delete(proof) }
         for photo in try context.fetch(FetchDescriptor<ProofPhoto>()) { context.delete(photo) }
+        for damage in try context.fetch(FetchDescriptor<DamageNote>()) { context.delete(damage) }
+        for invoice in try context.fetch(FetchDescriptor<Invoice>()) { context.delete(invoice) }
 
         let books = try context.fetch(FetchDescriptor<PriceBookVersion>())
         for book in books where !book.isLocalSample { context.delete(book) }
@@ -444,7 +523,8 @@ enum LocalStore {
         let files = FileManager.default
         let temp = files.temporaryDirectory
         let contents = (try? files.contentsOfDirectory(at: temp, includingPropertiesForKeys: nil)) ?? []
-        for url in contents where url.pathExtension.lowercased() == "pdf" {
+        // Also the XRechnung (.xml) and DATEV (.csv) exports.
+        for url in contents where ["pdf", "xml", "csv"].contains(url.pathExtension.lowercased()) {
             try? files.removeItem(at: url)
         }
     }
@@ -463,7 +543,21 @@ enum LocalStore {
         for sample in (try? context.fetch(FetchDescriptor<PriceBookVersion>(predicate: #Predicate { $0.isLocalSample }))) ?? [] {
             let codes = Set(sample.items.map(\.code))
             let missing = samplePriceItems.filter { !codes.contains($0.code) }
-            if !missing.isEmpty { sample.replaceSampleItems(sample.items + missing) }
+            // Scaffolding used to be billed by wall area; it now has its own basis.
+            var items = sample.items
+            var changed = !missing.isEmpty
+            for index in items.indices where items[index].code == "FAS-01" && items[index].basis == .wallArea {
+                items[index].basis = .scaffoldArea
+                changed = true
+            }
+            // Sample items get the material/labour split of the current sample prices.
+            let samples = Dictionary(samplePriceItems.map { ($0.code, $0) }, uniquingKeysWith: { first, _ in first })
+            for index in items.indices where !items[index].hasPriceSplit {
+                guard let sample = samples[items[index].code], sample.unitPriceCents == items[index].unitPriceCents else { continue }
+                items[index].setPriceSplit(material: sample.materialCents ?? 0, labor: sample.laborCents ?? 0)
+                changed = true
+            }
+            if changed { sample.replaceSampleItems(items + missing) }
         }
         try? context.save()
     }
@@ -476,7 +570,22 @@ enum LocalStore {
         )
     }
 
-    static let samplePriceItems: [PriceItem] = [
+    /// Rough material share of the sample prices (rest is labour) – replaced by the company's own prices.
+    private static func sampleMaterialPercent(_ code: String) -> Int {
+        switch code {
+        case "FAS-01": 60
+        case "FAS-02": 10
+        case "BER-01": 0
+        case "TUE-01", "BAU-01": 20
+        case "GES-03": 55
+        case _ where code.hasPrefix("MAL"), _ where code.hasPrefix("FAS"), _ where code.hasPrefix("LAI"), "GES-02": 30
+        default: 45
+        }
+    }
+
+    static let samplePriceItems: [PriceItem] = unsplitSampleItems.map { $0.splitting(materialPercent: sampleMaterialPercent($0.code)) }
+
+    private static let unsplitSampleItems: [PriceItem] = [
         PriceItem(id: UUID(), code: "MAL-01", name: String(localized: "Wall painting, 2 coats"), basis: .wallArea, unitPriceCents: 1250, openingRule: .vobPainting, defaultWastePercent: 0),
         PriceItem(id: UUID(), code: "MAL-02", name: String(localized: "Ceiling painting"), basis: .ceilingArea, unitPriceCents: 1450, openingRule: .noDeduction, defaultWastePercent: 0),
         PriceItem(id: UUID(), code: "DAM-01", name: String(localized: "Interior wall insulation"), basis: .wallArea, unitPriceCents: 6800, openingRule: .deductAll, defaultWastePercent: 5),
@@ -490,7 +599,7 @@ enum LocalStore {
     /// Facade & insulation services (based on ecodaemm.de). The website lists no
     /// prices: these are rough market estimates to be replaced in the price book.
     private static let facadeSampleItems: [PriceItem] = [
-        PriceItem(id: UUID(), code: "FAS-01", name: "Gerüst stellen, vorhalten & abbauen", basis: .wallArea, unitPriceCents: 1200, openingRule: .noDeduction, defaultWastePercent: 0),
+        PriceItem(id: UUID(), code: "FAS-01", name: "Gerüst stellen, vorhalten & abbauen", basis: .scaffoldArea, unitPriceCents: 1200, openingRule: .noDeduction, defaultWastePercent: 0),
         PriceItem(id: UUID(), code: "FAS-02", name: "Fassadenreinigung (Heißwasser-Hochdruck)", basis: .wallArea, unitPriceCents: 650, openingRule: .wallSystem, defaultWastePercent: 0),
         PriceItem(id: UUID(), code: "FAS-03", name: "Fassadenschutz – Imprägnierung / Hydrophobierung", basis: .wallArea, unitPriceCents: 950, openingRule: .wallSystem, defaultWastePercent: 5),
         PriceItem(id: UUID(), code: "FAS-04", name: "Fassadensanierung Altbau – Untergrund prüfen, reinigen & grundieren", basis: .wallArea, unitPriceCents: 1800, openingRule: .wallSystem, defaultWastePercent: 0),

@@ -31,6 +31,8 @@ enum Role: String, Codable {
 
     /// Only Owner/Admin may change firm settings and price books.
     var canManageFirm: Bool { self != .estimator }
+    /// Workers (estimators) see quantities only – prices, totals, invoices and profit are for Owner/Admin.
+    var canSeePrices: Bool { self != .estimator }
 }
 
 struct AuthSession: Codable {

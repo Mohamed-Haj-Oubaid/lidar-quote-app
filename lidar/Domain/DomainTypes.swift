@@ -31,12 +31,13 @@ nonisolated enum QuantityBasis: String, Codable, CaseIterable, Identifiable {
     case doorCount
     case windowCount
     case fixedPiece
+    case scaffoldArea
 
     var id: String { rawValue }
 
     var unit: PricingUnit {
         switch self {
-        case .wallArea, .floorArea, .ceilingArea: .squareMeter
+        case .wallArea, .floorArea, .ceilingArea, .scaffoldArea: .squareMeter
         case .skirtingLength, .revealLength: .linearMeter
         case .doorCount, .windowCount, .fixedPiece: .piece
         }
@@ -52,6 +53,7 @@ nonisolated enum QuantityBasis: String, Codable, CaseIterable, Identifiable {
         case .doorCount: String(localized: "Per door")
         case .windowCount: String(localized: "Per window")
         case .fixedPiece: String(localized: "Fixed piece")
+        case .scaffoldArea: String(localized: "Scaffold area")
         }
     }
 }
@@ -99,8 +101,30 @@ nonisolated struct PriceItem: Codable, Identifiable, Hashable {
     var openingRule: OpeningRule
     /// Default wastage buffer (Verschnitt) in percent, e.g. 0, 5 or 10.
     var defaultWastePercent: Int
+    /// Optional split of the unit price into material and labour (both per unit).
+    /// When set, `unitPriceCents == materialCents + laborCents`. Optional so price
+    /// books published before the split still decode.
+    var materialCents: Int? = nil
+    var laborCents: Int? = nil
 
     var unit: PricingUnit { basis.unit }
+
+    var hasPriceSplit: Bool { materialCents != nil || laborCents != nil }
+
+    /// Sets material and labour per unit and the unit price as their sum.
+    mutating func setPriceSplit(material: Int, labor: Int) {
+        materialCents = max(material, 0)
+        laborCents = max(labor, 0)
+        unitPriceCents = max(material, 0) + max(labor, 0)
+    }
+
+    /// Same item with the unit price split by the given material share (sample data).
+    func splitting(materialPercent: Int) -> PriceItem {
+        var item = self
+        let material = EstimationEngine.roundedDivide(unitPriceCents * materialPercent, by: 100)
+        item.setPriceSplit(material: material, labor: unitPriceCents - material)
+        return item
+    }
 }
 
 /// Immutable view of a published price-book version used as calculation input.
@@ -187,8 +211,19 @@ nonisolated struct RoomMeasurement: Codable, Hashable {
     var floorAreaOverride: Double?
     var source: Source
     var manuallyAdjusted: Bool
+    /// True for an exterior facade (walls measured from outside); nil/false for a room.
+    /// Optional so measurements stored before facades existed still decode.
+    var isFacade: Bool? = nil
 
     static let empty = RoomMeasurement(walls: [], openings: [], floorPolygon: [], floorAreaOverride: nil, source: .manual, manuallyAdjusted: false)
+
+    /// Scaffold reaches this far above the top of the wall (working level + guard rail).
+    static let scaffoldExtraHeight = 1.0
+
+    /// Scaffold area (Gerüstfläche): every wall length × (wall height + 1 m).
+    var scaffoldArea: Double {
+        walls.reduce(0) { $0 + $1.length * ($1.height + Self.scaffoldExtraHeight) }
+    }
 
     var grossWallArea: Double { walls.reduce(0) { $0 + $1.grossArea } }
     var totalOpeningArea: Double { openings.reduce(0) { $0 + $1.area } }

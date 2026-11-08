@@ -229,6 +229,14 @@ struct PDFFile: Identifiable {
     let id = UUID()
     let data: Data
     let url: URL
+
+    /// Writes `data` as a protected share file named `name` (any extension) in the temporary directory.
+    static func make(_ data: Data, name: String, fileExtension: String = "pdf") throws -> PDFFile {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(QuotePreviewView.fileName(for: name)).\(fileExtension)")
+        try data.write(to: url, options: [.atomic, .completeFileProtection])
+        return PDFFile(data: data, url: url)
+    }
 }
 
 /// PDF preview with a share button (Mail, AirDrop, Messages, …).

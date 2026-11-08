@@ -93,8 +93,8 @@ struct WorkProofTests {
         #expect(text.contains("Nordwand"))
         #expect(text.contains("Max Mustermann"))
         #expect(text.contains(try #require(proof.fingerprintSHA256)))
-        #expect(!text.contains("DRAFT"))
-        #expect(text.contains("Page 1 of \(pdf.pageCount)"))
+        #expect(!text.contains("ENTWURF"))
+        #expect(text.contains("Seite 1 von \(pdf.pageCount)"))
     }
 
     @Test func clientErasureAndJobDeletionRemovePhotoFiles() throws {

@@ -36,6 +36,13 @@ nonisolated struct QuoteLine: Codable, Hashable, Identifiable {
     var totalCents: Int
     /// Human-readable explanation of deductions, e.g. "Openings > 2.50 m² deducted, reveals added".
     var note: String?
+    /// Material and labour per unit and the labour share of `totalCents` (engine ≥ 1.3.0,
+    /// only when the price item is split). Material share = total − labour.
+    var unitMaterialCents: Int? = nil
+    var unitLaborCents: Int? = nil
+    var laborCents: Int? = nil
+
+    var materialCents: Int? { laborCents.map { totalCents - $0 } }
 
     var billedQuantity: Double { Double(billedQuantityHundredths) / 100 }
     var netQuantity: Double { Double(netQuantityHundredths) / 100 }
@@ -68,6 +75,17 @@ nonisolated struct QuoteCalculation: Codable, Hashable {
     /// Canonical JSON – the ONLY encoding used for both the integrity hash and the
     /// bytes sent to the server (`calculation_json`), so the server can verify the hash.
     /// Sorted keys, compact, "/" not escaped (since engine 1.1.0).
+    /// Labour costs contained in the net total (§ 35a EStG); nil when no line is split.
+    var laborTotalCents: Int? {
+        let split = lines.compactMap(\.laborCents)
+        return split.isEmpty ? nil : split.reduce(0, +)
+    }
+
+    /// VAT on the labour share, rounded like the total VAT.
+    var laborVATCents: Int? {
+        laborTotalCents.map { EstimationEngine.roundedDivide($0 * vatRateBasisPoints, by: 10_000) }
+    }
+
     func canonicalJSON() throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
@@ -90,7 +108,9 @@ nonisolated struct QuoteCalculation: Codable, Hashable {
 nonisolated enum EstimationEngine {
     /// 1.1.0: quote lines carry surveyID/itemID, canonical JSON without escaped
     /// slashes, opening notes built from parts (no stray separators).
-    static let version = "1.1.0"
+    /// 1.2.0: scaffold-area basis (wall length × (height + 1 m)).
+    /// 1.3.0: lines of split price items carry material/labour per unit and the labour share.
+    static let version = "1.3.0"
 
     static func calculate(rooms: [RoomInput], priceBook: PriceBookSnapshot) -> QuoteCalculation {
         let itemsByID = Dictionary(uniqueKeysWithValues: priceBook.items.map { ($0.id, $0) })
@@ -115,6 +135,10 @@ nonisolated enum EstimationEngine {
                 let netH = hundredths(quantity)
                 let billedH = applyWaste(netH, percent: selection.wastePercent, unit: item.unit)
                 guard billedH > 0 else { continue }
+                let totalCents = roundedDivide(billedH * item.unitPriceCents, by: 100)
+                let laborCents = item.hasPriceSplit
+                    ? min(roundedDivide(billedH * (item.laborCents ?? 0), by: 100), totalCents)
+                    : nil
                 lines.append(QuoteLine(
                     surveyID: room.surveyID,
                     itemID: item.id,
@@ -126,8 +150,11 @@ nonisolated enum EstimationEngine {
                     wastePercent: selection.wastePercent,
                     billedQuantityHundredths: billedH,
                     unitPriceCents: item.unitPriceCents,
-                    totalCents: roundedDivide(billedH * item.unitPriceCents, by: 100),
-                    note: note
+                    totalCents: totalCents,
+                    note: note,
+                    unitMaterialCents: item.hasPriceSplit ? (item.materialCents ?? 0) : nil,
+                    unitLaborCents: item.hasPriceSplit ? (item.laborCents ?? 0) : nil,
+                    laborCents: laborCents
                 ))
             }
         }
@@ -167,6 +194,8 @@ nonisolated enum EstimationEngine {
             return (Double(m.windowCount), nil)
         case .fixedPiece:
             return (1, nil)
+        case .scaffoldArea:
+            return (m.scaffoldArea, String(localized: "Wall length × (height + 1.00 m)"))
         }
     }
 

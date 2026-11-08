@@ -31,6 +31,42 @@ struct QuoteDocument {
     var calculation: QuoteCalculation
     /// Large diagonal text on every page, e.g. "SAMPLE – NOT A VALID QUOTE".
     var watermark: String?
+    /// The client's acceptance signed on the device (order confirmation).
+    var acceptance: Acceptance? = nil
+    /// Set when the document is an invoice created from the quote.
+    var invoice: InvoiceInfo? = nil
+
+    struct Acceptance {
+        var signerName: String
+        var signedAt: Date
+        var signature: UIImage?
+    }
+
+    struct InvoiceInfo {
+        var serviceDate: Date
+        var dueDate: Date
+        var quoteNumber: String
+    }
+
+    var title: String {
+        invoice == nil ? String(localized: "Quote \(number)") : String(localized: "Invoice \(number)")
+    }
+}
+
+/// Who the document is addressed to.
+struct DocumentRecipient {
+    var lines: [String]
+    var project: String
+
+    init(job: Job) {
+        lines = [job.clientName, job.siteAddress, job.clientEmail, job.clientPhone].filter { !$0.isEmpty }
+        project = job.title
+    }
+
+    init(lines: [String], project: String) {
+        self.lines = lines.filter { !$0.isEmpty }
+        self.project = project
+    }
 }
 
 enum PDFGenerator {
@@ -39,10 +75,26 @@ enum PDFGenerator {
 
     static func render(quote: Quote, job: Job, settings: TenantSettings) -> Data? {
         guard let calculation = quote.calculation else { return nil }
+        let acceptance = quote.clientSignedAt.flatMap { signedAt in
+            quote.clientSignaturePNG.map {
+                QuoteDocument.Acceptance(signerName: quote.clientSignerName, signedAt: signedAt, signature: UIImage(data: $0))
+            }
+        }
         return render(QuoteDocument(number: quote.displayNumber, revision: quote.revision, issuedAt: quote.issuedAt,
                                     isProvisional: quote.isProvisional, snapshotSHA256: quote.snapshotSHA256,
-                                    calculation: calculation, watermark: nil),
+                                    calculation: calculation, watermark: nil, acceptance: acceptance),
                       job: job, settings: settings)
+    }
+
+    static func render(invoice: Invoice, settings: TenantSettings) -> Data? {
+        guard let calculation = invoice.calculation else { return nil }
+        let document = QuoteDocument(number: invoice.number, revision: 0, issuedAt: invoice.issuedAt, isProvisional: false,
+                                     snapshotSHA256: "", calculation: calculation, watermark: nil,
+                                     invoice: .init(serviceDate: invoice.serviceDate, dueDate: invoice.dueDate,
+                                                    quoteNumber: invoice.quoteNumber))
+        let recipient = DocumentRecipient(lines: [invoice.buyerName, invoice.buyerAddress, invoice.buyerEmail],
+                                          project: invoice.projectTitle)
+        return render(document, recipient: recipient, settings: settings)
     }
 
     /// Watermarked preview for calculations from the local sample price book. Creates no quote.
@@ -54,17 +106,21 @@ enum PDFGenerator {
     }
 
     static func render(_ quote: QuoteDocument, job: Job, settings: TenantSettings) -> Data? {
+        render(quote, recipient: DocumentRecipient(job: job), settings: settings)
+    }
+
+    static func render(_ quote: QuoteDocument, recipient: DocumentRecipient, settings: TenantSettings) -> Data? {
         // Two passes: the first counts pages so every footer can say "Page x of y".
-        let first = renderPass(quote, job: job, settings: settings, totalPages: nil)
-        return renderPass(quote, job: job, settings: settings, totalPages: first.pages).data
+        let first = renderPass(quote, recipient: recipient, settings: settings, totalPages: nil)
+        return renderPass(quote, recipient: recipient, settings: settings, totalPages: first.pages).data
     }
 
     /// Number of pages a document needs (exposed for tests).
     static func pageCount(_ quote: QuoteDocument, job: Job, settings: TenantSettings) -> Int {
-        renderPass(quote, job: job, settings: settings, totalPages: nil).pages
+        renderPass(quote, recipient: DocumentRecipient(job: job), settings: settings, totalPages: nil).pages
     }
 
-    private static func renderPass(_ quote: QuoteDocument, job: Job, settings: TenantSettings, totalPages: Int?) -> (data: Data, pages: Int) {
+    private static func renderPass(_ quote: QuoteDocument, recipient: DocumentRecipient, settings: TenantSettings, totalPages: Int?) -> (data: Data, pages: Int) {
         let calculation = quote.calculation
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format(for: quote))
         var pages = 0
@@ -75,10 +131,9 @@ enum PDFGenerator {
 
             // Client & job
             page.text(String(localized: "Client"), font: .boldSystemFont(ofSize: 10))
-            let clientLines = [job.clientName, job.siteAddress, job.clientEmail, job.clientPhone].filter { !$0.isEmpty }
-            page.text(clientLines.joined(separator: "\n"), font: .systemFont(ofSize: 10))
+            page.text(recipient.lines.joined(separator: "\n"), font: .systemFont(ofSize: 10))
             page.y += 6
-            page.text(String(localized: "Project: \(job.title)"), font: .systemFont(ofSize: 10))
+            page.text(String(localized: "Project: \(recipient.project)"), font: .systemFont(ofSize: 10))
             page.y += 14
 
             // Room summary (Aufmaß)
@@ -95,6 +150,9 @@ enum PDFGenerator {
                 var description = "\(line.roomName) – \(line.itemName) (\(line.itemCode))"
                 if let note = line.note { description += "\n\(note)" }
                 if line.wastePercent > 0 { description += "\n" + String(localized: "incl. \(line.wastePercent) % waste") }
+                if let material = line.unitMaterialCents, let labor = line.unitLaborCents {
+                    description += "\n" + String(localized: "Material \(Formatters.money(material)) + labour \(Formatters.money(labor)) per \(line.unit.symbol)")
+                }
                 page.row([
                     "\(index + 1)",
                     description,
@@ -112,9 +170,21 @@ enum PDFGenerator {
             page.y = drawTotal(String(localized: "VAT \(vatPercent) %"), Formatters.money(calculation.vatCents), at: page.y, bold: false)
             page.y = drawTotal(String(localized: "Gross total"), Formatters.money(calculation.grossTotalCents), at: page.y, bold: true)
             page.y += 14
+            if let labor = calculation.laborTotalCents, let laborVAT = calculation.laborVATCents {
+                page.text(String(localized: "Contained labour costs (§ 35a EStG): net \(Formatters.money(labor)) · VAT \(Formatters.money(laborVAT)) · gross \(Formatters.money(labor + laborVAT)). Material net \(Formatters.money(calculation.netTotalCents - labor))."),
+                          font: .systemFont(ofSize: 8.5))
+                page.y += 8
+            }
 
             // Validity and payment terms.
-            if quote.watermark == nil {
+            if let invoice = quote.invoice {
+                let due = invoice.dueDate.formatted(date: .long, time: .omitted)
+                page.text(String(localized: "Please pay the gross total by \(due) without deduction, quoting invoice number \(quote.number)."),
+                          font: .boldSystemFont(ofSize: 9))
+                if !settings.bankIBAN.isEmpty {
+                    page.text(String(localized: "Bank account: IBAN \(settings.bankIBAN)"), font: .systemFont(ofSize: 9))
+                }
+            } else if quote.watermark == nil {
                 let days = max(settings.quoteValidityDays, 1)
                 let validUntil = (Calendar.current.date(byAdding: .day, value: days, to: quote.issuedAt) ?? quote.issuedAt)
                     .formatted(date: .long, time: .omitted)
@@ -125,7 +195,17 @@ enum PDFGenerator {
             }
             page.y += 10
 
+            if let acceptance = quote.acceptance {
+                drawAcceptance(acceptance, page: page)
+            }
+
             // Notes: reproducibility, machine-assisted measurement, privacy notice.
+            if quote.invoice != nil {
+                page.text(String(localized: "Services according to quote \(quote.invoice?.quoteNumber ?? ""). Dimensions as per measurement report."),
+                          font: .systemFont(ofSize: 7.5), color: .darkGray)
+                pages = page.number
+                return
+            }
             var notes = [
                 String(localized: "Price book “\(calculation.priceBookName)” v\(calculation.priceBookVersion) · calculation engine \(calculation.engineVersion) · SHA-256 fingerprint of the calculation \(quote.snapshotSHA256.prefix(16))"),
                 String(localized: "Dimensions were captured with machine-assisted LiDAR measurement and checked by our staff. Final billing follows the actual measured quantities."),
@@ -214,10 +294,36 @@ enum PDFGenerator {
         }
     }
 
+    /// Order confirmation: the client's signature captured on the device.
+    private static func drawAcceptance(_ acceptance: QuoteDocument.Acceptance, page: PageWriter) {
+        page.ensureSpace(150)
+        page.y += 6
+        page.text(String(localized: "Order confirmation"), font: .boldSystemFont(ofSize: 11))
+        page.text(String(localized: "I accept this quote and order the services listed above at the stated prices."),
+                  font: .systemFont(ofSize: 9))
+        page.y += 6
+        let box = CGRect(x: margin, y: page.y, width: 220, height: 70)
+        if let signature = acceptance.signature {
+            let size = PDFBrand.fitted(signature.size, into: box.size)
+            signature.draw(in: CGRect(x: box.minX, y: box.maxY - size.height, width: size.width, height: size.height))
+        }
+        let line = UIBezierPath()
+        line.move(to: CGPoint(x: box.minX, y: box.maxY + 2))
+        line.addLine(to: CGPoint(x: box.maxX, y: box.maxY + 2))
+        UIColor.darkGray.setStroke()
+        line.lineWidth = 0.75
+        line.stroke()
+        page.y = box.maxY + 6
+        let date = acceptance.signedAt.formatted(date: .long, time: .shortened)
+        page.text([acceptance.signerName, date].filter { !$0.isEmpty }.joined(separator: " · "), font: .boldSystemFont(ofSize: 10))
+        page.text(String(localized: "Client – signed on the device"), font: .systemFont(ofSize: 8), color: .darkGray)
+        page.y += 10
+    }
+
     private static func format(for quote: QuoteDocument) -> UIGraphicsPDFRendererFormat {
         let format = UIGraphicsPDFRendererFormat()
         format.documentInfo = [
-            kCGPDFContextTitle as String: String(localized: "Quote \(quote.number)"),
+            kCGPDFContextTitle as String: quote.title,
             kCGPDFContextCreator as String: "LiDAR Quote",
         ]
         return format
@@ -227,15 +333,20 @@ enum PDFGenerator {
     private static func drawHeader(quote: QuoteDocument, settings: TenantSettings, firstPage: Bool) -> CGFloat {
         var y = margin
         guard firstPage else {
-            y = draw(String(localized: "Quote \(quote.number) (continued)"), at: y, font: .boldSystemFont(ofSize: 10), color: .darkGray)
+            y = draw(String(localized: "\(quote.title) (continued)"), at: y, font: .boldSystemFont(ofSize: 10), color: .darkGray)
             return y + 10
         }
         let brand = PDFBrand(settings: settings)
         y = brand.drawLetterhead(settings: settings, at: y)
         y += 10
-        y = draw(String(localized: "Quote \(quote.number)"), at: y, font: brand.font(18, bold: true), color: brand.color)
+        y = draw(quote.title, at: y, font: brand.font(18, bold: true), color: brand.color)
         let date = quote.issuedAt.formatted(date: .long, time: .omitted)
-        y = draw(String(localized: "Revision \(quote.revision) · \(date)"), at: y, font: .systemFont(ofSize: 9), color: .darkGray)
+        if let invoice = quote.invoice {
+            let service = invoice.serviceDate.formatted(date: .long, time: .omitted)
+            y = draw(String(localized: "Invoice date \(date) · Date of service \(service)"), at: y, font: .systemFont(ofSize: 9), color: .darkGray)
+        } else {
+            y = draw(String(localized: "Revision \(quote.revision) · \(date)"), at: y, font: .systemFont(ofSize: 9), color: .darkGray)
+        }
 
         if quote.isProvisional {
             let banner = CGRect(x: margin, y: y + 6, width: pageRect.width - 2 * margin, height: 22)

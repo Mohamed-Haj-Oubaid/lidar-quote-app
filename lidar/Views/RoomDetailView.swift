@@ -36,6 +36,10 @@ struct RoomDetailView: View {
                         .foregroundStyle(.red)
                 }
                 LabeledContent("Source", value: m.source == .roomPlan ? String(localized: "LiDAR scan") : String(localized: "Manual entry"))
+                if m.isFacade == true {
+                    Label("Facade", systemImage: "building.2")
+                        .foregroundStyle(.blue)
+                }
                 if m.manuallyAdjusted {
                     Label("Manually adjusted", systemImage: "pencil.and.ruler")
                         .foregroundStyle(.orange)
@@ -43,7 +47,11 @@ struct RoomDetailView: View {
             }
 
             Section("Dimensions") {
-                LabeledContent("Floor area", value: Formatters.meters(m.floorArea, suffix: "m²"))
+                if m.isFacade == true {
+                    LabeledContent("Scaffold area", value: Formatters.meters(m.scaffoldArea, suffix: "m²"))
+                } else {
+                    LabeledContent("Floor area", value: Formatters.meters(m.floorArea, suffix: "m²"))
+                }
                 LabeledContent("Perimeter", value: Formatters.meters(m.perimeter))
                 LabeledContent("Average wall height", value: Formatters.meters(m.averageWallHeight))
                 LabeledContent("Wall area (gross)", value: Formatters.meters(m.grossWallArea, suffix: "m²"))
@@ -69,6 +77,8 @@ struct RoomDetailView: View {
                     UnassignedOpeningsCard(openings: unassignedOpenings)
                 }
             }
+
+            DamageSection(survey: survey)
 
             Section {
                 NavigationLink {
@@ -868,7 +878,10 @@ private struct PlanGeometry {
 
 struct MaterialSelectionView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(BackendClient.self) private var backend
     @Bindable var survey: Survey
+
+    private var canSeePrices: Bool { backend.session?.role?.canSeePrices ?? true }
     @Query(filter: #Predicate<PriceBookVersion> { $0.isActive }, sort: \PriceBookVersion.version, order: .reverse)
     private var priceBooks: [PriceBookVersion]
 
@@ -907,7 +920,7 @@ struct MaterialSelectionView: View {
             )) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.name)
-                    Text("\(Formatters.money(item.unitPriceCents)) / \(item.unit.symbol) · \(item.basis.title)")
+                    Text(canSeePrices ? "\(Formatters.money(item.unitPriceCents)) / \(item.unit.symbol) · \(item.basis.title)" : item.basis.title)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text("\(Formatters.quantity(EstimationEngine.hundredths(quantity), unit: item.unit))\(note.map { " · \($0)" } ?? "")")

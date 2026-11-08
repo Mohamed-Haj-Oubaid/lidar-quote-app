@@ -14,6 +14,10 @@ struct JobDetailView: View {
     @State private var isScanning = false
     @State private var isAddingManualRoom = false
     @State private var isSketching = false
+    @State private var documentFile: PDFFile?
+
+    /// Workers see quantities only.
+    private var canSeePrices: Bool { backend.session?.role?.canSeePrices ?? true }
 
     var body: some View {
         List {
@@ -49,6 +53,8 @@ struct JobDetailView: View {
                 Text("The client must be informed before their home is scanned.")
             }
 
+            JobPlanningSection(job: job)
+
             Section("Rooms") {
                 ForEach(job.sortedSurveys) { survey in
                     NavigationLink(value: survey) {
@@ -77,10 +83,29 @@ struct JobDetailView: View {
                 }
             }
 
+            Section("Documents") {
+                Button("Measurement Report (PDF)", systemImage: "ruler") { showAufmass() }
+                    .disabled(job.surveys.isEmpty)
+                NavigationLink {
+                    MaterialCalculatorView(job: job)
+                } label: {
+                    Label("Material List", systemImage: "shippingbox")
+                }
+                .disabled(job.surveys.isEmpty)
+            }
+
+            if canSeePrices {
+                JobProfitSection(job: job)
+            }
+
             Section("Quotes") {
                 ForEach(job.sortedQuotes) { quote in
-                    NavigationLink(value: quote) {
-                        QuoteRow(quote: quote)
+                    if canSeePrices {
+                        NavigationLink(value: quote) {
+                            QuoteRow(quote: quote, showsPrice: true)
+                        }
+                    } else {
+                        QuoteRow(quote: quote, showsPrice: false)
                     }
                 }
                 NavigationLink {
@@ -89,6 +114,18 @@ struct JobDetailView: View {
                     Label("Create Quote", systemImage: "doc.badge.plus")
                 }
                 .disabled(job.surveys.isEmpty)
+            }
+
+            if canSeePrices, !job.invoices.isEmpty {
+                Section("Invoices") {
+                    ForEach(job.sortedInvoices) { invoice in
+                        NavigationLink {
+                            InvoiceView(invoice: invoice)
+                        } label: {
+                            InvoiceRow(invoice: invoice)
+                        }
+                    }
+                }
             }
 
             WorkProofSection(job: job)
@@ -144,6 +181,15 @@ struct JobDetailView: View {
         .fullScreenCover(isPresented: $isSketching) {
             NavigationStack { SketchRoomView(job: job) }
         }
+        .sheet(item: $documentFile) { file in
+            PDFSheet(file: file) { documentFile = nil }
+        }
+    }
+
+    private func showAufmass() {
+        let data = AufmassPDF.render(job: job, settings: LocalStore.settings(in: modelContext))
+        LocalStore.removeSharedPDFs()
+        documentFile = try? PDFFile.make(data, name: String(localized: "Measurement Report \(job.title)"))
     }
 
     /// Server first (it is authoritative), then Storage files, then the local copy.
@@ -182,6 +228,7 @@ private struct RoomRow: View {
 
 private struct QuoteRow: View {
     let quote: Quote
+    let showsPrice: Bool
 
     private var statusColor: Color {
         if quote.isProvisional { return .orange }
@@ -203,7 +250,7 @@ private struct QuoteRow: View {
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                if let calculation = quote.calculation {
+                if showsPrice, let calculation = quote.calculation {
                     Text(Formatters.money(calculation.grossTotalCents))
                         .font(.subheadline.monospacedDigit())
                 }

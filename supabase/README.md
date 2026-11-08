@@ -28,6 +28,7 @@ are in English because the Supabase dashboard is English.
 | 6 | `migrations/20261102000006_maintenance.sql` | Automatic clean-up jobs |
 | 7 | `migrations/20261102000007_fixes.sql` | Review fixes: consent timestamps, deletable users/companies, retry info, quote verification, media retention |
 | 8 | `migrations/20261102000008_fixes_medium.sql` | Invitation consent, company details for quotes |
+| 9 | `migrations/20261108000009_scaffold_basis.sql` | Price items may use the new basis "scaffold area" (Gerüstfläche) |
 
 Each file runs **once**. (With the Supabase CLI instead: `supabase link` + `supabase db push`.)
 

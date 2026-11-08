@@ -7,10 +7,10 @@ import UIKit
 enum ScanCaptureMode: String, CaseIterable, Identifiable {
     case room, detail
     var id: String { rawValue }
-    var title: String { switch self { case .room: "Room LiDAR"; case .detail: "High Detail" } }
+    var title: String { switch self { case .room: String(localized: "Room LiDAR"); case .detail: String(localized: "High Detail") } }
     var subtitle: String { switch self {
-        case .room: "Fast architectural scan for walls, doors, windows, and measurements."
-        case .detail: "Denser capture for objects, corners, furniture, and small surfaces."
+        case .room: String(localized: "Fast architectural scan for walls, doors, windows, and measurements.")
+        case .detail: String(localized: "Denser capture for objects, corners, furniture, and small surfaces.")
     } }
     var systemImage: String { switch self { case .room: "square.split.2x2"; case .detail: "viewfinder" } }
     var sampleInterval: TimeInterval { switch self { case .room: 0.65; case .detail: 0.32 } }

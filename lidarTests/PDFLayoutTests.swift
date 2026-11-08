@@ -52,13 +52,13 @@ struct PDFLayoutTests {
         #expect(pages.count >= 2)
         #expect(pages.count == PDFGenerator.pageCount(doc, job: job, settings: settings))
         for (index, text) in pages.enumerated() {
-            #expect(text.contains("Page \(index + 1) of \(pages.count)"))
+            #expect(text.contains("Seite \(index + 1) von \(pages.count)"))
             #expect(text.contains("DE02120300000000202051"))
         }
         // Table header repeats on continuation pages that still contain rows.
-        #expect(pages[1].contains("Description"))
+        #expect(pages[1].contains("Beschreibung"))
         let all = pages.joined(separator: "\n")
-        #expect(all.contains("Valid until"))
+        #expect(all.contains("Gültig bis"))
         #expect(all.contains("14 days net"))
     }
 

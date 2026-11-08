@@ -45,6 +45,15 @@ final class TenantSettings {
     var pdfFooterNote: String = ""
     var proofReportTitle: String = ""
     var proofPhotosPerRow: Int = 2
+    // Invoicing (device-local).
+    var nextInvoiceSequence: Int = 1
+    var invoicePrefix: String = "RE"
+    var invoiceDueDays: Int = 14
+    /// Accounting export (DATEV, SKR03 defaults): revenue account and debtor account.
+    var datevRevenueAccount: String = "8400"
+    var datevDebtorAccount: String = "10000"
+    /// Material consumption rates for the material calculator (JSON of [MaterialRate]).
+    var materialsData: Data = Data()
 
     init(deviceCode: String) {
         self.firmName = Self.defaultFirmName
@@ -61,7 +70,7 @@ final class TenantSettings {
     static var defaultFirmName: String { String(localized: "My Company") }
     static let defaultQuotePrefix = "ANG"
     static var defaultPrivacyNotice: String {
-        String(localized: "To prepare your quote we measure the room with a LiDAR scanner. We store room dimensions, your name and contact details to create and manage the quote. No camera images are stored. Controller: the company named on this quote. You have the right to access, rectify and erase your data.")
+        String(localized: "To prepare your quote we measure the rooms with a LiDAR scanner and a laser distance meter. We store room dimensions, a 3D model of the room, photos of existing damage and of the completed work, your name and contact details to create and manage the quote and the invoice. Controller: the company named on this quote. You have the right to access, rectify and erase your data.")
     }
 
     /// Forgets everything that belongs to a company account. Device identity
@@ -90,6 +99,12 @@ final class TenantSettings {
         pdfFooterNote = ""
         proofReportTitle = ""
         proofPhotosPerRow = 2
+        // The invoice sequence stays: numbers contain the device code and must never repeat.
+        invoicePrefix = "RE"
+        invoiceDueDays = 14
+        datevRevenueAccount = "8400"
+        datevDebtorAccount = "10000"
+        materialsData = Data()
     }
 }
 
@@ -159,6 +174,20 @@ final class Job {
     @Relationship(deleteRule: .cascade, inverse: \Survey.job) var surveys: [Survey] = []
     @Relationship(deleteRule: .cascade, inverse: \Quote.job) var quotes: [Quote] = []
     @Relationship(deleteRule: .cascade, inverse: \WorkProof.job) var workProofs: [WorkProof] = []
+    /// Invoices must be kept for 10 years (GoBD): they survive the job and carry their own buyer copy.
+    @Relationship(deleteRule: .nullify, inverse: \Invoice.job) var invoices: [Invoice] = []
+
+    // Planning (device-local): stage in the job pipeline, dates and the assigned worker.
+    var stageRaw: String = JobStage.inquiry.rawValue
+    var plannedStart: Date?
+    var plannedEnd: Date?
+    var assignedWorker: String = ""
+    var planningNotes: String = ""
+
+    var stage: JobStage {
+        get { JobStage(rawValue: stageRaw) ?? .inquiry }
+        set { stageRaw = newValue.rawValue }
+    }
 
     init(id: UUID = UUID(), title: String, clientName: String = "", clientEmail: String = "", clientPhone: String = "", siteAddress: String = "") {
         self.id = id
@@ -174,6 +203,37 @@ final class Job {
     var sortedSurveys: [Survey] { surveys.sorted { $0.capturedAt < $1.capturedAt } }
     var sortedQuotes: [Quote] { quotes.sorted { $0.revision > $1.revision } }
     var sortedWorkProofs: [WorkProof] { workProofs.sorted { $0.createdAt > $1.createdAt } }
+    var sortedInvoices: [Invoice] { invoices.sorted { $0.issuedAt > $1.issuedAt } }
+}
+
+/// Pipeline of a job from first contact to payment.
+enum JobStage: String, CaseIterable, Identifiable {
+    case inquiry, survey, quoted, ordered, inProgress, invoiced, paid
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .inquiry: String(localized: "Inquiry")
+        case .survey: String(localized: "Survey")
+        case .quoted: String(localized: "Quote sent")
+        case .ordered: String(localized: "Ordered")
+        case .inProgress: String(localized: "In progress")
+        case .invoiced: String(localized: "Invoiced")
+        case .paid: String(localized: "Paid")
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .inquiry: "envelope"
+        case .survey: "ruler"
+        case .quoted: "doc.text"
+        case .ordered: "signature"
+        case .inProgress: "hammer"
+        case .invoiced: "eurosign.circle"
+        case .paid: "checkmark.seal"
+        }
+    }
 }
 
 /// Proof of completed work (Arbeitsnachweis): site photos plus the worker's name
@@ -251,6 +311,9 @@ final class Survey {
 
     var mediaUploaded: Bool
     var job: Job?
+    @Relationship(deleteRule: .cascade, inverse: \DamageNote.survey) var damages: [DamageNote] = []
+
+    var sortedDamages: [DamageNote] { damages.sorted { $0.createdAt < $1.createdAt } }
     /// Failed media uploads back off like the outbox instead of failing every sync.
     var mediaUploadAttempts: Int = 0
     var mediaNextAttemptAt: Date?
@@ -318,6 +381,9 @@ final class Quote {
     /// Lifecycle from the server: issued, sent, accepted, rejected, superseded.
     var status: String = "issued"
     var clientSignedAt: Date?
+    /// Client's signature captured on the device when accepting the quote (device-local).
+    @Attribute(.externalStorage) var clientSignaturePNG: Data?
+    var clientSignerName: String = ""
 
     init(id: UUID = UUID(), provisionalNumber: String, revision: Int, calculation: QuoteCalculation, snapshotSHA256: String, job: Job) {
         self.id = id
