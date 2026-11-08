@@ -13,23 +13,37 @@ struct ScanRoomView: View {
     var replacing: Survey?
 
     private enum Phase: Equatable {
-        case scanning, processing, failed(String)
+        case setup, scanning, processing, failed(String)
     }
 
-    @State private var phase = Phase.scanning
+    @State private var phase = Phase.setup
+    @State private var captureMode = ScanCaptureMode.room
     @State private var roomName = ""
+    @State private var scanCoverage = 0.0
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            RoomCaptureRepresentable(isScanning: phase == .scanning) { result in
-                handle(result)
+        if phase == .setup {
+            ScanModeSetupView(selection: $captureMode, onCancel: { dismiss() }) {
+                scanCoverage = 0
+                phase = .scanning
             }
+        } else {
+        ZStack(alignment: .bottom) {
+            RoomCaptureRepresentable(
+                isScanning: phase == .scanning,
+                captureMode: captureMode,
+                onCoverageChange: { scanCoverage = $0 },
+                onFinish: handle
+            )
             .ignoresSafeArea()
 
             VStack(spacing: 12) {
                 switch phase {
+                case .setup:
+                    EmptyView()
                 case .scanning:
-                    Text("Walk slowly along the walls. Point at every door and window.")
+                    ScanCoveragePanel(coverage: scanCoverage)
+                    Text("Move slowly and cover every wall, floor, ceiling, door, and window. Hold each surface in view so LiDAR can capture its shape and real color.")
                         .font(.callout)
                         .multilineTextAlignment(.center)
                         .padding(10)
@@ -39,6 +53,7 @@ struct ScanRoomView: View {
                             .buttonStyle(.bordered)
                         Button("Done") { phase = .processing }
                             .buttonStyle(.borderedProminent)
+                            .disabled(scanCoverage < 0.8)
                     }
                 case .processing:
                     ProgressView("Processing scan…")
@@ -62,47 +77,149 @@ struct ScanRoomView: View {
         .onAppear {
             roomName = LocalStore.nextRoomName(for: job)
         }
-    }
-
-    private func handle(_ result: Result<CapturedRoom, Error>) {
-        switch result {
-        case .failure(let error):
-            phase = .failed(error.localizedDescription)
-        case .success(let room):
-            if let survey = replacing {
-                rescan(survey, with: room)
-                return
-            }
-            // Re-check: another room may have been added since the scan started.
-            let name = LocalStore.isRoomName(roomName, takenIn: job) ? LocalStore.nextRoomName(for: job) : roomName
-            let survey = Survey(roomName: name, measurement: SurveyEngine.measurement(from: room), job: job)
-            modelContext.insert(survey)
-            // The parametric model holds geometry only (no camera imagery) and stays on the device
-            // unless the firm allows media upload.
-            survey.usdzFileName = try? SurveyEngine.storeModel(room, surveyID: survey.id)
-            do {
-                try LocalStore.save(survey: survey, in: modelContext)
-                dismiss()
-            } catch {
-                phase = .failed(error.localizedDescription)
-            }
         }
     }
 
-    private func rescan(_ survey: Survey, with room: CapturedRoom) {
-        survey.measurement = SurveyEngine.measurement(from: room)
+    private func handle(_ result: Result<RoomCaptureOutput, Error>) {
+        switch result {
+        case .failure(let error):
+            phase = .failed(error.localizedDescription)
+        case .success(let output):
+            save(output, wallPhotos: [])
+        }
+    }
+
+    private func save(_ output: RoomCaptureOutput, wallPhotos: [Data]) {
+        let room = output.room
+        if let survey = replacing {
+            saveRescan(survey, output: output, wallPhotos: wallPhotos)
+            return
+        }
+
+        let name = LocalStore.isRoomName(roomName, takenIn: job)
+            ? LocalStore.nextRoomName(for: job)
+            : roomName
+        let survey = Survey(
+            roomName: name,
+            measurement: SurveyEngine.measurement(from: room, coloredSurface: output.coloredSurface),
+            job: job
+        )
+        modelContext.insert(survey)
+        storeMedia(output, wallPhotos: wallPhotos, for: survey)
+        persist(survey)
+    }
+
+    private func saveRescan(_ survey: Survey, output: RoomCaptureOutput, wallPhotos: [Data]) {
+        survey.measurement = SurveyEngine.measurement(
+            from: output.room,
+            coloredSurface: output.coloredSurface
+        )
         survey.capturedAt = .now
-        survey.usdzFileName = try? SurveyEngine.storeModel(room, surveyID: survey.id)
-        // The new model must be uploaded again (if the firm allows uploads).
+        storeMedia(output, wallPhotos: wallPhotos, for: survey)
         survey.mediaUploaded = false
         survey.mediaUploadAttempts = 0
         survey.mediaNextAttemptAt = nil
+        persist(survey)
+    }
+
+    private func storeMedia(_ output: RoomCaptureOutput, wallPhotos: [Data], for survey: Survey) {
+        survey.usdzFileName = try? SurveyEngine.storeModel(output.room, surveyID: survey.id)
+        let processedMesh = RoomMeshPostProcessor.process(
+            coloredSurface: output.coloredSurface,
+            texturedSurface: output.texturedSurface,
+            measurement: survey.measurement
+        )
+        survey.photoPointCloudFileName = try? PhotoPointCloudStore.store(
+            coloredSurface: processedMesh.coloredSurface,
+            texturedSurface: processedMesh.texturedSurface,
+            surveyID: survey.id
+        )
+        survey.wallTextureFileNames = (try? SurveyEngine.storeWallTextures(
+            wallPhotos,
+            surveyID: survey.id
+        )) ?? []
+    }
+
+    private func persist(_ survey: Survey) {
         do {
             try LocalStore.save(survey: survey, in: modelContext)
             dismiss()
         } catch {
             phase = .failed(error.localizedDescription)
         }
+    }
+}
+
+private struct ScanModeSetupView: View {
+    @Binding var selection: ScanCaptureMode
+    let onCancel: () -> Void
+    let onStart: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    Text("Choose scan mode").font(.largeTitle.bold())
+                    Text("Higher quality modes capture more points and photos. Move slowly for the best result.")
+                        .foregroundStyle(.secondary)
+                    ForEach(ScanCaptureMode.allCases) { mode in
+                        Button { selection = mode } label: {
+                            HStack(spacing: 16) {
+                                Image(systemName: mode.systemImage).font(.title).frame(width: 44)
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(mode.title).font(.headline)
+                                    Text(mode.subtitle).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.leading)
+                                }
+                                Spacer()
+                                Image(systemName: selection == mode ? "checkmark.circle.fill" : "circle")
+                                    .font(.title2).foregroundStyle(selection == mode ? .blue : .secondary)
+                            }
+                            .padding()
+                            .background(.background, in: .rect(cornerRadius: 16))
+                            .overlay { RoundedRectangle(cornerRadius: 16).stroke(selection == mode ? Color.blue : .secondary.opacity(0.2), lineWidth: selection == mode ? 2 : 1) }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    Button(action: onStart) {
+                        Label("Start Scan", systemImage: "viewfinder.circle.fill").frame(maxWidth: .infinity).padding(.vertical, 8)
+                    }
+                    .buttonStyle(.borderedProminent).controlSize(.large)
+                }
+                .frame(maxWidth: 720, alignment: .leading).padding(28).frame(maxWidth: .infinity)
+            }
+            .background(Color(.systemGroupedBackground))
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel", role: .cancel, action: onCancel) } }
+        }
+    }
+}
+
+private struct ScanCoveragePanel: View {
+    let coverage: Double
+
+    private var percentage: Int {
+        Int((coverage * 100).rounded())
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Scan coverage")
+                    .font(.headline)
+                Spacer()
+                Text(coverage, format: .percent.precision(.fractionLength(0)))
+                    .font(.title2.monospacedDigit())
+                    .bold()
+            }
+            Text(coverage >= 0.8
+                 ? "Coverage is sufficient. Colored points show exactly what LiDAR captured."
+                 : "Continue until at least 80%. Colored points show the surfaces already captured.")
+                .font(.callout)
+                .foregroundStyle(coverage >= 0.8 ? .green : .primary)
+        }
+        .padding()
+        .background(.regularMaterial, in: .rect(cornerRadius: 12))
+        .accessibilityElement(children: .combine)
+        .accessibilityValue("\(percentage) percent")
     }
 }
 

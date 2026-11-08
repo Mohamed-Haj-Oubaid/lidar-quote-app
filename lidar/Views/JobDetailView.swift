@@ -13,6 +13,7 @@ struct JobDetailView: View {
     @State private var isShowingPrivacyNotice = false
     @State private var isScanning = false
     @State private var isAddingManualRoom = false
+    @State private var isSketching = false
 
     var body: some View {
         List {
@@ -60,6 +61,10 @@ struct JobDetailView: View {
                     isScanning = true
                 }
                 .disabled(job.privacyNoticeConfirmedAt == nil || !SurveyEngine.isScanningSupported)
+
+                Button("Draw Floor Plan & Laser Measure", systemImage: "pencil.and.outline") {
+                    isSketching = true
+                }
 
                 Button("Add Room Manually", systemImage: "square.and.pencil") {
                     isAddingManualRoom = true
@@ -135,6 +140,9 @@ struct JobDetailView: View {
         }
         .fullScreenCover(isPresented: $isScanning) {
             ScanRoomView(job: job)
+        }
+        .fullScreenCover(isPresented: $isSketching) {
+            NavigationStack { SketchRoomView(job: job) }
         }
     }
 

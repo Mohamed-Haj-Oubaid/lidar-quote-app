@@ -1,6 +1,6 @@
 import SwiftUI
 import SwiftData
-import QuickLook
+import SceneKit
 
 struct RoomDetailView: View {
     @Environment(\.modelContext) private var modelContext
@@ -10,8 +10,11 @@ struct RoomDetailView: View {
     @State private var name = ""
     @State private var nameError: String?
     @FocusState private var isNameFocused: Bool
-    /// Set to the USDZ file to present it in the system 3D viewer (Quick Look).
-    @State private var modelPreviewURL: URL?
+    /// Selected local model presented in the interactive measurement viewer.
+    @State private var modelViewerItem: RoomModelViewerItem?
+    @State private var depthMeasurementOpeningID: UUID?
+    @State private var pendingWindowDepth: Double?
+    @State private var isChoosingWindowDepthScope = false
     @State private var modelMissing = false
     @State private var isRescanning = false
     @State private var isConfirmingDelete = false
@@ -49,6 +52,24 @@ struct RoomDetailView: View {
                 LabeledContent("Doors / windows", value: "\(m.doorCount) / \(m.windowCount)")
             }
 
+            Section("Walls, doors and windows") {
+                ForEach(Array(m.walls.enumerated()), id: \.element.id) { index, wall in
+                    WallDetailCard(
+                        number: index + 1,
+                        wallID: wall.id,
+                        survey: survey,
+                        onMeasureWindowDepth: openModelForWindowDepth
+                    )
+                }
+
+                let unassignedOpenings = m.openings.filter { opening in
+                    opening.wallID == nil || !m.walls.contains(where: { $0.id == opening.wallID })
+                }
+                if !unassignedOpenings.isEmpty {
+                    UnassignedOpeningsCard(openings: unassignedOpenings)
+                }
+            }
+
             Section {
                 NavigationLink {
                     PlanEditorView(survey: survey)
@@ -70,7 +91,7 @@ struct RoomDetailView: View {
                     Label(survey.mediaUploaded ? String(localized: "3D model uploaded") : String(localized: "3D model stored on this device"),
                           systemImage: survey.mediaUploaded ? "icloud" : "iphone")
                 } footer: {
-                    Text("Geometry only – no camera images are stored.")
+                    Text("Interactive mesh plus a local-only Photo mode built from camera color and LiDAR depth. Wall and opening measurements remain visible in every mode.")
                 }
             }
 
@@ -85,11 +106,41 @@ struct RoomDetailView: View {
             }
         }
         .navigationTitle(survey.roomName)
-        .quickLookPreview($modelPreviewURL)
+        .fullScreenCover(item: $modelViewerItem) { item in
+            RoomModelViewer(
+                modelURL: item.url,
+                photoPointCloudURL: item.photoPointCloudURL,
+                wallTextureURLs: item.wallTextureURLs,
+                roomName: survey.roomName,
+                measurement: survey.measurement,
+                startsInMeasurementMode: depthMeasurementOpeningID != nil,
+                measurementSaveTitle: depthMeasurementOpeningID == nil ? nil : "Save as window depth",
+                onSaveMeasurement: saveMeasuredWindowDepth
+            )
+        }
+        .onChange(of: modelViewerItem?.id) { _, itemID in
+            if itemID == nil, pendingWindowDepth != nil {
+                isChoosingWindowDepthScope = true
+            }
+        }
         .alert("3D model not found", isPresented: $modelMissing) {
             Button("OK", role: .cancel) {}
         } message: {
             Text("The model file is not on this device.")
+        }
+        .confirmationDialog(
+            "Where should this measured depth be saved?",
+            isPresented: $isChoosingWindowDepthScope,
+            titleVisibility: .visible
+        ) {
+            Button("Only this window") { applyPendingWindowDepth(to: .selectedWindow) }
+            Button("All windows on this wall") { applyPendingWindowDepth(to: .windowsOnWall) }
+            Button("All windows in this room") { applyPendingWindowDepth(to: .allWindows) }
+            Button("Cancel", role: .cancel) { clearPendingWindowDepth() }
+        } message: {
+            if let pendingWindowDepth {
+                Text("Measured depth: \(pendingWindowDepth, format: .number.precision(.fractionLength(2))) m")
+            }
         }
         .confirmationDialog("Delete \(survey.roomName)?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
             Button("Delete Room", role: .destructive, action: deleteRoom)
@@ -110,13 +161,74 @@ struct RoomDetailView: View {
     }
 
     private func openModel() {
+        openModel(measuringDepthFor: nil)
+    }
+
+    private func openModelForWindowDepth(_ openingID: UUID) {
+        openModel(measuringDepthFor: openingID)
+    }
+
+    private func openModel(measuringDepthFor openingID: UUID?) {
         guard let fileName = survey.usdzFileName,
               let url = try? SurveyEngine.mediaURL(for: fileName),
               FileManager.default.fileExists(atPath: url.path) else {
             modelMissing = true
             return
         }
-        modelPreviewURL = url
+        depthMeasurementOpeningID = openingID
+        let photoURL = survey.photoPointCloudFileName
+            .flatMap { try? SurveyEngine.mediaURL(for: $0) }
+            .flatMap { FileManager.default.fileExists(atPath: $0.path) ? $0 : nil }
+        let wallTextureURLs: [URL] = survey.wallTextureFileNames.compactMap { fileName -> URL? in
+            guard let url = try? SurveyEngine.mediaURL(for: fileName),
+                  FileManager.default.fileExists(atPath: url.path) else {
+                return nil
+            }
+            return url
+        }
+        modelViewerItem = RoomModelViewerItem(
+            url: url,
+            photoPointCloudURL: photoURL,
+            wallTextureURLs: wallTextureURLs
+        )
+    }
+
+    private func saveMeasuredWindowDepth(_ depth: Double) {
+        guard depthMeasurementOpeningID != nil else { return }
+        pendingWindowDepth = depth
+    }
+
+    private func applyPendingWindowDepth(to scope: WindowDepthSaveScope) {
+        guard let depth = pendingWindowDepth,
+              let selectedID = depthMeasurementOpeningID,
+              let selected = survey.measurement.openings.first(where: { $0.id == selectedID }) else {
+            clearPendingWindowDepth()
+            return
+        }
+
+        for index in survey.measurement.openings.indices {
+            let opening = survey.measurement.openings[index]
+            guard opening.kind == .window else { continue }
+            let shouldUpdate = switch scope {
+            case .selectedWindow:
+                opening.id == selectedID
+            case .windowsOnWall:
+                opening.wallID == selected.wallID
+            case .allWindows:
+                true
+            }
+            if shouldUpdate {
+                survey.measurement.openings[index].depth = depth
+            }
+        }
+        survey.measurement.manuallyAdjusted = true
+        try? LocalStore.save(survey: survey, in: modelContext)
+        clearPendingWindowDepth()
+    }
+
+    private func clearPendingWindowDepth() {
+        pendingWindowDepth = nil
+        depthMeasurementOpeningID = nil
     }
 
     /// Leaves the screen first, then deletes – so this view never renders a deleted room.
@@ -140,6 +252,397 @@ struct RoomDetailView: View {
         } catch {
             nameError = error.localizedDescription
         }
+    }
+}
+
+private enum WindowDepthSaveScope {
+    case selectedWindow
+    case windowsOnWall
+    case allWindows
+}
+
+private struct WallDetailCard: View {
+    let number: Int
+    let wallID: UUID
+    @Bindable var survey: Survey
+    let onMeasureWindowDepth: (UUID) -> Void
+    @Environment(\.modelContext) private var modelContext
+    @State private var isExpanded = false
+
+    private var wall: WallSegment? {
+        survey.measurement.walls.first { $0.id == wallID }
+    }
+
+    private var openings: [RoomOpening] {
+        survey.measurement.openings.filter { $0.wallID == wallID }
+    }
+
+    private var openingArea: Double {
+        openings.reduce(0) { $0 + $1.area }
+    }
+
+    var body: some View {
+        if let wall {
+        DisclosureGroup(isExpanded: $isExpanded) {
+            VStack(alignment: .leading, spacing: 10) {
+                TextField("Wall name", text: wallNameBinding)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit(save)
+                LabeledContent("Length", value: Formatters.meters(wall.length))
+                LabeledContent("Height", value: Formatters.meters(wall.height))
+                LabeledContent("Gross area", value: Formatters.meters(wall.grossArea, suffix: "m²"))
+                LabeledContent("Openings area", value: Formatters.meters(openingArea, suffix: "m²"))
+                LabeledContent("Net area", value: Formatters.meters(max(0, wall.grossArea - openingArea), suffix: "m²"))
+
+                if openings.isEmpty {
+                    Text("No doors or windows on this wall")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Divider()
+                    ForEach(Array(openings.enumerated()), id: \.element.id) { index, opening in
+                        OpeningDetailRow(
+                            number: index + 1,
+                            opening: opening,
+                            name: openingNameBinding(opening.id),
+                            depthMeters: openingDepthBinding(opening.id),
+                            onRescan: { replacement in
+                                guard let openingIndex = survey.measurement.openings.firstIndex(where: { $0.id == opening.id }) else { return }
+                                survey.measurement.openings[openingIndex].width = replacement.width
+                                survey.measurement.openings[openingIndex].height = replacement.height
+                                survey.measurement.openings[openingIndex].depth = replacement.depth
+                                survey.measurement.openings[openingIndex].centerHeight = replacement.centerHeight
+                                save()
+                            },
+                            onDepthCommit: {
+                                survey.measurement.manuallyAdjusted = true
+                                save()
+                            },
+                            onMeasureWindowDepth: { onMeasureWindowDepth(opening.id) },
+                            onCommit: save
+                        )
+                        if index < openings.count - 1 { Divider() }
+                    }
+                }
+                NavigationLink {
+                    WallOnly3DViewer(
+                        title: wall.name?.nonEmpty ?? String(localized: "Wall \(number)"),
+                        wall: wall,
+                        openings: openings
+                    )
+                } label: {
+                    Label("View this wall in 3D", systemImage: "cube.transparent")
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .padding(.top, 8)
+        } label: {
+            HStack {
+                Label(wall.name?.nonEmpty ?? String(localized: "Wall \(number)"), systemImage: "rectangle.portrait")
+                    .font(.headline)
+                Spacer()
+                Text(Formatters.meters(wall.length))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        }
+    }
+
+    private var wallNameBinding: Binding<String> {
+        Binding(
+            get: { wall?.name ?? "" },
+            set: { value in
+                guard let index = survey.measurement.walls.firstIndex(where: { $0.id == wallID }) else { return }
+                survey.measurement.walls[index].name = value.nonEmpty
+            }
+        )
+    }
+
+    private func openingNameBinding(_ openingID: UUID) -> Binding<String> {
+        Binding(
+            get: { survey.measurement.openings.first(where: { $0.id == openingID })?.name ?? "" },
+            set: { value in
+                guard let index = survey.measurement.openings.firstIndex(where: { $0.id == openingID }) else { return }
+                survey.measurement.openings[index].name = value.nonEmpty
+            }
+        )
+    }
+
+    private func openingDepthBinding(_ openingID: UUID) -> Binding<Double> {
+        Binding(
+            get: { survey.measurement.openings.first(where: { $0.id == openingID })?.depth ?? 0 },
+            set: { value in
+                guard let index = survey.measurement.openings.firstIndex(where: { $0.id == openingID }) else { return }
+                survey.measurement.openings[index].depth = max(0, value)
+            }
+        )
+    }
+
+    private func save() {
+        try? LocalStore.save(survey: survey, in: modelContext)
+    }
+}
+
+private struct OpeningDetailRow: View {
+    let number: Int
+    let opening: RoomOpening
+    @Binding var name: String
+    @Binding var depthMeters: Double
+    let onRescan: (RoomOpening) -> Void
+    let onDepthCommit: () -> Void
+    let onMeasureWindowDepth: () -> Void
+    let onCommit: () -> Void
+    @State private var isMeasuringDepth = false
+
+    private var icon: String {
+        switch opening.kind {
+        case .door: "door.left.hand.open"
+        case .window: "window.vertical.open"
+        case .opening: "rectangle.dashed"
+        }
+    }
+
+    private var rescanTitle: LocalizedStringResource {
+        switch opening.kind {
+        case .door: "Rescan Door"
+        case .window: "Rescan Window"
+        case .opening: "Rescan Opening"
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(name.nonEmpty ?? "\(opening.kind.title) \(number)", systemImage: icon)
+                .font(.headline)
+            TextField("Name", text: $name)
+                .textFieldStyle(.roundedBorder)
+                .onSubmit(onCommit)
+            LabeledContent("Width", value: Formatters.meters(opening.width))
+            LabeledContent("Height", value: Formatters.meters(opening.height))
+            LabeledContent("Area", value: Formatters.meters(opening.area, suffix: "m²"))
+            if opening.kind == .window {
+                HStack(spacing: 12) {
+                    Text("Manual depth")
+                    Spacer(minLength: 12)
+                    HStack(spacing: 5) {
+                    TextField(
+                        "Depth",
+                        value: $depthMeters,
+                        format: .number.precision(.fractionLength(0...3))
+                    )
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                        .frame(width: 90)
+                    Text("m")
+                        .foregroundStyle(.secondary)
+                    }
+                    .fixedSize(horizontal: true, vertical: false)
+                }
+                Button("Save manual depth", systemImage: "square.and.arrow.down") {
+                    onDepthCommit()
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(depthMeters < 0.01 || depthMeters > 1)
+            }
+            Button(
+                opening.kind == .window ? "Measure Window Depth" : rescanTitle,
+                systemImage: opening.kind == .window ? "ruler" : "arrow.triangle.2.circlepath.camera"
+            ) {
+                if opening.kind == .window {
+                    onMeasureWindowDepth()
+                } else {
+                    isMeasuringDepth = true
+                }
+            }
+            .buttonStyle(.bordered)
+            if let centerHeight = opening.centerHeight {
+                LabeledContent("Center height", value: Formatters.meters(centerHeight))
+            }
+            if let centerOffset = opening.centerOffset {
+                LabeledContent("Position from wall start", value: Formatters.meters(centerOffset))
+            }
+            LabeledContent("Reveal length", value: Formatters.meters(opening.revealLength))
+        }
+        .fullScreenCover(isPresented: $isMeasuringDepth) {
+            OpeningRescanView(
+                opening: opening,
+                onSave: onRescan
+            )
+        }
+    }
+}
+
+private struct UnassignedOpeningsCard: View {
+    let openings: [RoomOpening]
+    @State private var isExpanded = false
+
+    var body: some View {
+        DisclosureGroup("Unassigned openings (\(openings.count))", isExpanded: $isExpanded) {
+            ForEach(Array(openings.enumerated()), id: \.element.id) { index, opening in
+                VStack(alignment: .leading) {
+                    Text(opening.name?.nonEmpty ?? "\(opening.kind.title) \(index + 1)")
+                        .font(.headline)
+                    LabeledContent("Width", value: Formatters.meters(opening.width))
+                    LabeledContent("Height", value: Formatters.meters(opening.height))
+                }.padding(.top, 8)
+            }
+        }
+    }
+}
+
+private extension String {
+    var nonEmpty: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+}
+
+private struct WallOnly3DViewer: View {
+    let title: String
+    let wall: WallSegment
+    let openings: [RoomOpening]
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            WallOnlySceneView(wall: wall, openings: openings)
+                .ignoresSafeArea(edges: .bottom)
+            Wall3DSummaryPanel(title: title, wall: wall, openings: openings)
+                .padding()
+        }
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct Wall3DSummaryPanel: View {
+    let title: String
+    let wall: WallSegment
+    let openings: [RoomOpening]
+
+    private var openingArea: Double { openings.reduce(0) { $0 + $1.area } }
+    private var doorCount: Int { openings.filter { $0.kind == .door }.count }
+    private var windowCount: Int { openings.filter { $0.kind == .window }.count }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Label(title, systemImage: "rectangle.portrait")
+                .font(.headline)
+            HStack(spacing: 16) {
+                DetailValue(title: "Length", value: Formatters.meters(wall.length))
+                DetailValue(title: "Height", value: Formatters.meters(wall.height))
+                DetailValue(title: "Gross", value: Formatters.meters(wall.grossArea, suffix: "m²"))
+                DetailValue(title: "Net", value: Formatters.meters(max(0, wall.grossArea - openingArea), suffix: "m²"))
+            }
+            HStack(spacing: 16) {
+                Label("\(doorCount) doors", systemImage: "door.left.hand.open")
+                    .foregroundStyle(.orange)
+                Label("\(windowCount) windows", systemImage: "window.vertical.open")
+                    .foregroundStyle(.cyan)
+                Text("Openings: \(Formatters.meters(openingArea, suffix: "m²"))")
+            }
+            .font(.caption)
+        }
+        .padding(12)
+        .background(.regularMaterial, in: .rect(cornerRadius: 14))
+    }
+}
+
+private struct DetailValue: View {
+    let title: LocalizedStringKey
+    let value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).font(.caption2).foregroundStyle(.secondary)
+            Text(value).font(.caption.monospacedDigit()).bold()
+        }
+    }
+}
+
+private struct WallOnlySceneView: UIViewRepresentable {
+    let wall: WallSegment
+    let openings: [RoomOpening]
+
+    func makeUIView(context: Context) -> SCNView {
+        let view = SCNView()
+        view.backgroundColor = .secondarySystemBackground
+        view.allowsCameraControl = true
+        view.autoenablesDefaultLighting = true
+        view.antialiasingMode = .multisampling4X
+        view.scene = makeScene()
+        view.pointOfView = view.scene?.rootNode.childNode(withName: "wall-camera", recursively: true)
+        return view
+    }
+
+    func updateUIView(_ view: SCNView, context: Context) {
+        view.scene = makeScene()
+        view.pointOfView = view.scene?.rootNode.childNode(withName: "wall-camera", recursively: true)
+    }
+
+    private func makeScene() -> SCNScene {
+        let scene = SCNScene()
+        let wallBox = SCNBox(
+            width: CGFloat(max(wall.length, 0.01)),
+            height: CGFloat(max(wall.height, 0.01)),
+            length: 0.08,
+            chamferRadius: 0.01
+        )
+        let wallMaterial = SCNMaterial()
+        wallMaterial.diffuse.contents = UIColor.systemGray5
+        wallMaterial.roughness.contents = 0.9
+        wallMaterial.isDoubleSided = true
+        wallBox.materials = [wallMaterial]
+        let wallNode = SCNNode(geometry: wallBox)
+        wallNode.simdPosition = SIMD3<Float>(0, Float(wall.height / 2), 0)
+        scene.rootNode.addChildNode(wallNode)
+
+        for (index, opening) in openings.enumerated() {
+            let color: UIColor = switch opening.kind {
+            case .door: .systemOrange
+            case .window: .systemCyan
+            case .opening: .systemPurple
+            }
+            let box = SCNBox(
+                width: CGFloat(max(opening.width, 0.01)),
+                height: CGFloat(max(opening.height, 0.01)),
+                length: 0.12,
+                chamferRadius: 0.01
+            )
+            let material = SCNMaterial()
+            material.lightingModel = .constant
+            material.diffuse.contents = color.withAlphaComponent(0.3)
+            material.emission.contents = color.withAlphaComponent(0.75)
+            material.fillMode = .lines
+            material.isDoubleSided = true
+            box.materials = [material]
+            let node = SCNNode(geometry: box)
+            let center = opening.centerOffset ?? wall.length / 2
+            let x = center - wall.length / 2
+            let y = opening.centerHeight ?? (opening.kind == .door ? opening.height / 2 : 1.1)
+            node.simdPosition = SIMD3<Float>(Float(x), Float(y), 0.07)
+            scene.rootNode.addChildNode(node)
+
+            let text = SCNText(
+                string: opening.name?.nonEmpty ?? "\(opening.kind.title) \(index + 1)",
+                extrusionDepth: 0.002
+            )
+            text.font = .preferredFont(forTextStyle: .caption1)
+            text.firstMaterial?.diffuse.contents = color
+            text.firstMaterial?.emission.contents = color
+            let label = SCNNode(geometry: text)
+            label.scale = SCNVector3(0.006, 0.006, 0.006)
+            label.simdPosition = SIMD3<Float>(Float(x - opening.width / 2), Float(y + opening.height / 2 + 0.08), 0.1)
+            scene.rootNode.addChildNode(label)
+        }
+
+        let camera = SCNNode()
+        camera.name = "wall-camera"
+        camera.camera = SCNCamera()
+        camera.camera?.zNear = 0.01
+        camera.simdPosition = SIMD3<Float>(0, Float(wall.height * 0.55), Float(max(wall.length, wall.height) * 1.35))
+        camera.look(at: SCNVector3(0, Float(wall.height / 2), 0))
+        scene.rootNode.addChildNode(camera)
+        return scene
     }
 }
 

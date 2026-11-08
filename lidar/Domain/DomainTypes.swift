@@ -130,6 +130,7 @@ nonisolated struct PlanPoint: Codable, Hashable {
 
 nonisolated struct WallSegment: Codable, Hashable, Identifiable {
     var id: UUID
+    var name: String? = nil
     var start: PlanPoint
     var end: PlanPoint
     var height: Double
@@ -152,9 +153,13 @@ nonisolated struct RoomOpening: Codable, Hashable, Identifiable {
     }
 
     var id: UUID
+    var name: String? = nil
     var kind: Kind
     var width: Double
     var height: Double
+    /// Measured recess/wall depth and vertical centre, when RoomPlan reports them.
+    var depth: Double? = nil
+    var centerHeight: Double? = nil
     /// Wall this opening sits in (if known) and the distance of its centre from the wall start.
     var wallID: UUID?
     var centerOffset: Double?

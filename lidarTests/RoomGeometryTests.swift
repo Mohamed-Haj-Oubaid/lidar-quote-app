@@ -4,6 +4,57 @@ import Testing
 
 /// H4 – plan edits keep walls connected and the floor consistent. M6 – measurement basics.
 struct RoomGeometryTests {
+    @Test func openingDepthPrefersTheOpeningOverTheParentWall() {
+        let depth = SurveyEngine.resolvedOpeningDepth(
+            surfaceDepth: 0.18,
+            meshDepth: nil,
+            parentWallDepth: 0.33
+        )
+
+        #expect(depth == 0.18)
+    }
+
+    @Test func openingDepthFallsBackToMeshThenWall() {
+        #expect(SurveyEngine.resolvedOpeningDepth(
+            surfaceDepth: 0,
+            meshDepth: 0.16,
+            parentWallDepth: 0.33
+        ) == 0.16)
+        #expect(SurveyEngine.resolvedOpeningDepth(
+            surfaceDepth: 0,
+            meshDepth: nil,
+            parentWallDepth: 0.24
+        ) == 0.24)
+    }
+
+    @Test func openingDepthPrefersMeasuredMeshOverRoomPlanBoundingBox() {
+        let depth = SurveyEngine.resolvedOpeningDepth(
+            surfaceDepth: 0.34,
+            meshDepth: 0.23,
+            parentWallDepth: 0.34
+        )
+
+        #expect(depth == 0.23)
+    }
+
+    @Test func windowDepthRejectsSideThatSeesThroughGlass() {
+        let left = stride(from: -0.12, through: 0.12, by: 0.01).map { $0 }
+        let right = stride(from: -0.12, through: 0.12, by: 0.01).map { $0 }
+        let top = stride(from: -0.12, through: 0.12, by: 0.01).map { $0 }
+        let contaminatedBottom = stride(from: -0.17, through: 0.17, by: 0.01).map { $0 }
+
+        let depth = SurveyEngine.robustWindowRevealDepth(
+            sideSamples: [left, right, top, contaminatedBottom]
+        )
+
+        #expect(depth != nil)
+        #expect(abs((depth ?? 0) - 0.16) < 0.025)
+    }
+
+    @Test func windowDepthNeverAcceptsOutdoorBackground() {
+        #expect(SurveyEngine.resolvedWindowDepth(surfaceDepth: 0.51, meshDepth: 0.51) == nil)
+        #expect(SurveyEngine.resolvedWindowDepth(surfaceDepth: 0.51, meshDepth: 0.24) == 0.24)
+    }
     private func approx(_ a: Double, _ b: Double, _ tolerance: Double = 1e-9) -> Bool { abs(a - b) <= tolerance }
 
     @Test func rectangleFactory() {

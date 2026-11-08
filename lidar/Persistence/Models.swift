@@ -235,8 +235,20 @@ final class Survey {
     var updatedAt: Date
     var measurementData: Data
     var selectionsData: Data
-    /// File name of the parametric USDZ model in the app's media directory, if any.
+    /// File names for the RoomPlan mesh and local-only camera-colored LiDAR points.
     var usdzFileName: String?
+    var photoPointCloudFileName: String? = nil
+    var wallTextureFileNamesData: Data = Data()
+
+    var wallTextureFileNames: [String] {
+        get {
+            (try? StoreCoding.decoder.decode([String].self, from: wallTextureFileNamesData)) ?? []
+        }
+        set {
+            wallTextureFileNamesData = (try? StoreCoding.encoder.encode(newValue)) ?? Data()
+        }
+    }
+
     var mediaUploaded: Bool
     var job: Job?
     /// Failed media uploads back off like the outbox instead of failing every sync.

@@ -1,0 +1,3 @@
+open3d>=0.20
+numpy>=1.26
+opencv-python>=4.9

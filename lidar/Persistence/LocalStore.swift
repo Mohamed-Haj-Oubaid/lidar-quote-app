@@ -288,6 +288,8 @@ enum LocalStore {
         for survey in job.surveys {
             removeMedia(of: survey)
             survey.usdzFileName = nil
+            survey.photoPointCloudFileName = nil
+            survey.wallTextureFileNames = []
             survey.mediaUploaded = false
         }
         WorkProofStore.erasePhotos(of: job, in: context)
@@ -387,8 +389,12 @@ enum LocalStore {
     }
 
     private static func removeMedia(of survey: Survey) {
-        if let fileName = survey.usdzFileName, let url = try? SurveyEngine.mediaURL(for: fileName) {
-            try? FileManager.default.removeItem(at: url)
+        let fileNames = [survey.usdzFileName, survey.photoPointCloudFileName].compactMap { $0 }
+            + survey.wallTextureFileNames
+        for fileName in fileNames {
+            if let url = try? SurveyEngine.mediaURL(for: fileName) {
+                try? FileManager.default.removeItem(at: url)
+            }
         }
     }
 
